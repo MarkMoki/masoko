@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "cap:sync": "npx cap sync",
-    "cap:sync:dev": "CAPACITOR_SERVER_URL=http://localhost:3000 npx cap sync",
+    "cap:sync:dev": "CAPACITOR_SERVER_URL=https://masoko-lemon.vercel.app/ npx cap sync",
     "cap:android": "npx cap open android",
     "cap:ios": "npx cap open ios",
     "cap:add": "npx cap add android && npx cap add ios"

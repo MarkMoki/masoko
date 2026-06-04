@@ -212,29 +212,35 @@ export async function enrichPromos(promos: MarketplacePromo[]) {
 }
 
 export async function aggregateMostSoldProducts(limit = 8) {
-   const items = await listAllDocuments<{ productId: string; quantity: number }>(
-     COLLECTIONS.sellerOrderItems,
-     []
-   );
-   const totals = new Map<string, number>();
-   for (const item of items) {
-     totals.set(
-       item.productId,
-       (totals.get(item.productId) ?? 0) + item.quantity
+   try {
+     const items = await listAllDocuments<{ productId: string; quantity: number }>(
+       COLLECTIONS.sellerOrderItems,
+       []
      );
+     const totals = new Map<string, number>();
+     for (const item of items) {
+       totals.set(
+         item.productId,
+         (totals.get(item.productId) ?? 0) + item.quantity
+       );
+     }
+     const sorted = [...totals.entries()]
+       .sort((a, b) => b[1] - a[1])
+       .slice(0, limit)
+       .map(([productId]) => productId);
+     const products = await getProductsByIds(sorted);
+     const byId = new Map(products.map((p) => [p.id, p]));
+     return await Promise.all(
+       sorted
+         .map((id) => byId.get(id))
+         .filter(Boolean)
+         .map((p) => enrichProduct(p!))
+     );
+   } catch (error) {
+     // If the collection doesn't exist or there's a database error, return empty array
+     console.warn('Failed to aggregate most sold products:', error);
+     return [];
    }
-   const sorted = [...totals.entries()]
-     .sort((a, b) => b[1] - a[1])
-     .slice(0, limit)
-     .map(([productId]) => productId);
-   const products = await getProductsByIds(sorted);
-   const byId = new Map(products.map((p) => [p.id, p]));
-   return await Promise.all(
-     sorted
-       .map((id) => byId.get(id))
-       .filter(Boolean)
-       .map((p) => enrichProduct(p!))
-   );
  }
 
 export { PromoType };

@@ -4,6 +4,7 @@ import { ProductCard } from "@/components/products/product-card";
 import { PromoSection } from "@/components/marketplace/promo-section";
 import { Suspense } from "react";
 import { MarketplaceSearch } from "@/components/products/marketplace-search";
+import { headers } from "next/headers";
 
 export default async function MarketplacePage({
   searchParams,
@@ -16,9 +17,11 @@ export default async function MarketplacePage({
   const limit = 24;
   const skip = (page - 1) * limit;
 
+  const userAgent = (await headers()).get("user-agent") ?? "";
+
   const [products, total, user, session, promos] = await Promise.all([
-    Promise.resolve([] as any[]), // Prisma removed
-    Promise.resolve(0 as number), // Prisma removed - product count
+    Promise.resolve([] as any[]),
+    Promise.resolve(0 as number),
     getCurrentUser(),
     getSession(),
     getMarketplacePromos(),
@@ -31,7 +34,7 @@ export default async function MarketplacePage({
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Marketplace</h1>
         <p className="text-muted-foreground">
-          Shop from multiple sellers in one place
+          Shop from multiple sellers in one cart
         </p>
       </div>
 
@@ -44,6 +47,8 @@ export default async function MarketplacePage({
           promos={promos}
           sessionRole={session?.role}
           currentUserId={user?.id}
+          initialUserAgent={userAgent}
+          apkDownloadUrl="/downloads/maSoKo.apk"
         />
       )}
 

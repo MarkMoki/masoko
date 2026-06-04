@@ -1,34 +1,75 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { ProductCard } from "@/components/products/product-card";
 import { Role } from "@/lib/types";
-import type { getMarketplacePromos } from "@/lib/marketplace";
 
-type PromoData = Awaited<ReturnType<typeof getMarketplacePromos>>;
+export type PromoData = {
+  enabled: boolean;
+  banners: any[];
+  offers: any[];
+  mostSold: any[];
+};
 
 export function PromoSection({
   promos,
   sessionRole,
   currentUserId,
+  initialUserAgent = "",
+  apkDownloadUrl = "#",
 }: {
   promos: PromoData;
   sessionRole?: Role | null;
   currentUserId?: string | null;
+  initialUserAgent?: string;
+  apkDownloadUrl?: string;
 }) {
+  const [isApp, setIsApp] = useState(false);
+
+  useEffect(() => {
+    const ua =
+      typeof navigator !== "undefined"
+        ? navigator.userAgent
+        : initialUserAgent;
+
+    const looksLikeWebView =
+      /wv/.test(ua) ||
+      /WebView/.test(ua) ||
+      (/Android/.test(ua) && /Chrome/.test(ua));
+
+    let native = false;
+    try {
+      const cap = (window as any).Capacitor;
+      if (cap?.isNativePlatform) native = cap.isNativePlatform();
+    } catch {}
+
+    setIsApp(looksLikeWebView || native);
+  }, [initialUserAgent]);
+
   if (!promos.enabled) return null;
 
+  const visibleBanners = isApp
+    ? promos.banners.filter((b) => b.type !== "APK")
+    : promos.banners;
+  const apkBanners = !isApp
+    ? promos.banners.filter((b) => b.type === "APK")
+    : [];
+
   const hasContent =
-    promos.banners.length > 0 ||
+    visibleBanners.length > 0 ||
     promos.offers.length > 0 ||
-    promos.mostSold.length > 0;
+    promos.mostSold.length > 0 ||
+    apkBanners.length > 0;
 
   if (!hasContent) return null;
 
   return (
     <section className="mb-10 space-y-8">
-      {promos.banners.length > 0 && (
+      {visibleBanners.length > 0 && (
         <div className="grid gap-4 md:grid-cols-2">
-          {promos.banners.map((banner) => (
+          {visibleBanners.map((banner) => (
             <Link
               key={banner.id}
               href={banner.linkUrl || "#"}
@@ -60,6 +101,46 @@ export function PromoSection({
         </div>
       )}
 
+      {apkBanners.length > 0 && (
+        <div className="grid gap-4 md:grid-cols-2">
+          {apkBanners.map((banner) => (
+            <div
+              key={banner.id}
+              className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-primary/10 to-primary/5 p-6 shadow-sm"
+            >
+              {banner.imageUrl && (
+                <div className="absolute inset-0 opacity-20">
+                  <Image
+                    src={banner.imageUrl}
+                    alt=""
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              )}
+              <div className="relative">
+                <p className="text-xs font-semibold uppercase tracking-wide text-primary">
+                  Android App
+                </p>
+                <h2 className="mt-1 text-xl font-bold">{banner.title}</h2>
+                {banner.subtitle && (
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {banner.subtitle}
+                  </p>
+                )}
+                <a
+                  href={apkDownloadUrl}
+                  download
+                  className="mt-4 inline-block rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+                >
+                  Download APK
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {promos.offers.length > 0 && (
         <div>
           <h2 className="mb-3 text-lg font-semibold">Special offers</h2>
@@ -67,7 +148,10 @@ export function PromoSection({
             {promos.offers.map((offer) => (
               <Link
                 key={offer.id}
-                href={offer.linkUrl || offer.productId ? `/products/${offer.productId}` : "#"}
+                href={
+                  offer.linkUrl ||
+                  (offer.productId ? `/products/${offer.productId}` : "#")
+                }
                 className="min-w-[240px] shrink-0 rounded-lg border bg-card p-4 transition hover:border-primary"
               >
                 {offer.imageUrl && (
@@ -82,7 +166,9 @@ export function PromoSection({
                 )}
                 <p className="font-medium">{offer.title}</p>
                 {offer.subtitle && (
-                  <p className="text-sm text-muted-foreground">{offer.subtitle}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {offer.subtitle}
+                  </p>
                 )}
               </Link>
             ))}

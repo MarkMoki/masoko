@@ -79,10 +79,16 @@ export async function getSession(): Promise<SessionPayload | null> {
 }
 
 export async function getCurrentUser() {
-  const session = await getSession();
-  if (!session) return null;
-  return getUserById(session.sub, true);
-}
+   const session = await getSession();
+   if (!session) return null;
+   try {
+     return await getUserById(session.sub, true);
+   } catch {
+     // User ID in session no longer exists in database
+     // Return null - the invalid cookie will be ignored on next request
+     return null;
+   }
+ }
 
 export function requireRole(session: SessionPayload | null, ...roles: Role[]) {
   if (!session) return false;

@@ -38,6 +38,7 @@ export enum PromoType {
   BANNER = "BANNER",
   OFFER = "OFFER",
   MOST_SOLD = "MOST_SOLD",
+  APK = "APK",
 }
 
 export type User = {
