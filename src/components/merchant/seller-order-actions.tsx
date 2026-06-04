@@ -1,6 +1,6 @@
 "use client";
 
-import { SellerOrderStatus } from "@prisma/client";
+import { SellerOrderStatus } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";

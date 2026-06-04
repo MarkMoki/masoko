@@ -29,7 +29,11 @@ export async function POST(req: Request) {
   try {
     await requireAuth(Role.ADMIN);
     const body = createSchema.parse(await req.json());
-    const promo = await createMarketplacePromo(body);
+    const promo = await createMarketplacePromo({
+      ...body,
+      active: body.active ?? true,
+      sortOrder: body.sortOrder ?? 0,
+    });
     return json({ promo }, 201);
   } catch (err) {
     return handleApiError(err);

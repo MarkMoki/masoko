@@ -115,7 +115,8 @@ async function ensureCollectionsExist() {
 
         for (const attr of col.attributes) {
           if (attr.type === "string") {
-            await databases.createStringAttribute(DATABASE_ID, col.id, attr.name, attr.size!, attr.required);
+            const size = (attr as any).size || 255;
+            await databases.createStringAttribute(DATABASE_ID, col.id, attr.name, size, attr.required);
           } else if (attr.type === "integer") {
             await databases.createIntegerAttribute(DATABASE_ID, col.id, attr.name, attr.required);
           } else if (attr.type === "boolean") {
@@ -130,7 +131,7 @@ async function ensureCollectionsExist() {
 
         for (const index of col.indexes) {
           try {
-            await databases.createIndex(DATABASE_ID, col.id, index.key, index.type, index.attributes);
+            await databases.createIndex(DATABASE_ID, col.id, index.key, index.type as any, index.attributes);
             console.log(`Index "${index.key}" initialized.`);
           } catch (idxError) {
             console.warn(`Could not create index "${index.key}":`, idxError);

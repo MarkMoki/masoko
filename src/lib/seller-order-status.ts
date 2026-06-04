@@ -1,4 +1,4 @@
-import { SellerOrderStatus } from "@prisma/client";
+import { SellerOrderStatus } from "@/lib/types";
 
 const FLOW: Record<SellerOrderStatus, SellerOrderStatus[]> = {
   PENDING_PAYMENT: ["CANCELLED"],

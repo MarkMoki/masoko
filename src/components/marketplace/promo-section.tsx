@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ProductCard } from "@/components/products/product-card";
-import { Role } from "@prisma/client";
+import { Role } from "@/lib/types";
 import type { getMarketplacePromos } from "@/lib/marketplace";
 
 type PromoData = Awaited<ReturnType<typeof getMarketplacePromos>>;

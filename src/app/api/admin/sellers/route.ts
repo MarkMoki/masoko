@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { Role } from "@/lib/types";
 import { listUsersByRole, getUserByEmail, createUser } from "@/lib/db/users-stores";
-import { getStoreById, countProductsByStore } from "@/lib/db/users-stores";
+import { getStoreBySellerId, countProductsByStore } from "@/lib/db/users-stores";
 import { hashPassword } from "@/lib/auth";
 import { requireAuth, handleApiError, json } from "@/lib/api-route";
 

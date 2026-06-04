@@ -1,4 +1,4 @@
-import { Role } from "@prisma/client";
+import { Role } from "@/lib/types";
 import { storage } from "@/lib/storage";
 import { requireAuth, handleApiError, json, errorResponse } from "@/lib/api-route";
 

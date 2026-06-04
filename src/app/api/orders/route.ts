@@ -2,7 +2,6 @@ import { Role } from "@/lib/types";
 import { Query } from "node-appwrite";
 import {
   listMasterOrders,
-  countDocuments,
   getMasterOrderFull,
 } from "@/lib/db/orders";
 import {
@@ -26,12 +25,9 @@ export async function GET(req: Request) {
     let orders, total;
 
     if (session.role === Role.CUSTOMER) {
-      const [ordersResult, totalResult] = await Promise.all([
-        listMasterOrders({ customerId: session.sub, skip, limit }),
-        countDocuments("master_orders", [Query.equal("customerId", session.sub)]),
-      ]);
-      orders = ordersResult.documents;
-      total = totalResult;
+      const result = await listMasterOrders({ customerId: session.sub, skip, limit });
+      orders = result.documents;
+      total = result.total;
       
       // Enrich orders with customer and seller details
       const enrichedOrders = await Promise.all(
@@ -43,12 +39,9 @@ export async function GET(req: Request) {
       orders = enrichedOrders;
     } 
     else if (session.role === Role.SELLER) {
-      const [ordersResult, totalResult] = await Promise.all([
-        listSellerOrders({ sellerId: session.sub, skip, limit }),
-        countDocuments("seller_orders", [Query.equal("sellerId", session.sub)]),
-      ]);
-      orders = ordersResult.documents;
-      total = totalResult;
+      const result = await listSellerOrders({ sellerId: session.sub, skip, limit });
+      orders = result.documents;
+      total = result.total;
       
       // Enrich orders with seller, items, payments, and master order details
       const enrichedOrders = await Promise.all(
@@ -60,12 +53,9 @@ export async function GET(req: Request) {
       orders = enrichedOrders;
     }
     else { // ADMIN
-      const [ordersResult, totalResult] = await Promise.all([
-        listMasterOrders({ skip, limit }),
-        countDocuments("master_orders", []),
-      ]);
-      orders = ordersResult.documents;
-      total = totalResult;
+      const result = await listMasterOrders({ skip, limit });
+      orders = result.documents;
+      total = result.total;
       
       // Enrich orders with customer and seller details
       const enrichedOrders = await Promise.all(

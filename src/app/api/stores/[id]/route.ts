@@ -3,10 +3,8 @@ import { Role } from "@/lib/types";
 import {
   getStoreById,
   updateStore,
-  listDocuments,
-  countDocuments,
 } from "@/lib/db/users-stores";
-import { Query } from "node-appwrite";
+import { Query, listDocuments } from "@/lib/db/helpers";
 import { COLLECTIONS } from "@/lib/appwrite/config";
 import {
   requireAuth,

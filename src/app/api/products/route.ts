@@ -6,11 +6,11 @@ import { listProducts, createProduct, getProductById, updateProduct, deleteProdu
 import { getStoreBySellerId } from "@/lib/db/users-stores";
 
 export async function GET(req: Request) {
-  try:
+  try {
     const { searchParams } = new URL(req.url);
     const page = Math.max(1, parseInt(searchParams.get("page") ?? "1", 10));
     const q = searchParams.get("q") ?? "";
-    const categoryId = searchParams.get("categoryId");
+    const categoryId = searchParams.get("categoryId") ?? undefined;
     const limit = 24;
     const skip = (page - 1) * limit;
 
@@ -82,7 +82,7 @@ export async function PUT(req: Request) {
 
     const body = await req.json();
     // Only allow updating certain fields
-    const updateData = {
+    const updateData: Record<string, any> = {
       name: body.name,
       description: body.description,
       price: body.price,

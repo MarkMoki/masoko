@@ -114,12 +114,12 @@ async function seedAppwrite() {
       const existing = await listAllDocuments<{ name: string }>(COLLECTIONS.categories, [
         Query.equal("name", name)
       ]);
-      if (existing.documents.length === 0) {
+      if (existing.length === 0) {
         const category = await createDocument<{ name: string }>(COLLECTIONS.categories, { name });
-        categories[name] = category.$id;
+        categories[name] = category.id;
         console.log(`Category "${name}" created`);
       } else {
-        categories[name] = existing.documents[0].$id;
+        categories[name] = existing[0].id;
         console.log(`Category "${name}" already exists`);
       }
     }
@@ -170,7 +170,7 @@ async function seedAppwrite() {
         Query.equal("name", productData.name),
         Query.equal("sellerId", productData.sellerId)
       ]);
-      if (existing.documents.length === 0) {
+      if (existing.length === 0) {
         await createProduct(productData);
         console.log(`Product "${productData.name}" created`);
       } else {
@@ -236,7 +236,7 @@ async function seedAppwrite() {
         Query.equal("type", promoData.type),
         Query.equal("title", promoData.title)
       ]);
-      if (existing.documents.length === 0) {
+      if (existing.length === 0) {
         await createDocument<typeof promoData>(COLLECTIONS.marketplacePromos, promoData);
         console.log(`Promo "${promoData.title}" created`);
       } else {

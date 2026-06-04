@@ -30,7 +30,11 @@ export async function POST(req: Request) {
       await clearDefaultPaymentMethods(session.sub);
     }
 
-    const method = await createPaymentMethod({ ...body, sellerId: session.sub });
+    const method = await createPaymentMethod({
+      ...body,
+      sellerId: session.sub,
+      isDefault: body.isDefault ?? false,
+    });
     return json({ method }, 201);
   } catch (err) {
     return handleApiError(err);

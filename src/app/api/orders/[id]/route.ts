@@ -26,9 +26,9 @@ export async function GET(
     } else if (session.role === Role.CUSTOMER) {
       isAuthorized = order.customerId === session.sub;
     } else if (session.role === Role.SELLER) {
-      isAuthorized = order.sellerOrders.some(
+      isAuthorized = order.sellerOrders?.some(
         (so) => so.sellerId === session.sub
-      );
+      ) ?? false;
     }
 
     if (!isAuthorized) {
@@ -39,7 +39,7 @@ export async function GET(
     if (session.role === Role.SELLER) {
       // Filter seller orders to only include the current seller's
       const mySellerOrders = await Promise.all(
-        order.sellerOrders
+        (order.sellerOrders ?? [])
           .filter((so) => so.sellerId === session.sub)
           .map(async (sellerOrder) => {
             // Ensure the seller order is enriched with items (it should already be from getMasterOrderFull)

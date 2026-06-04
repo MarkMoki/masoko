@@ -1,4 +1,4 @@
-import { Role } from "@prisma/client";
+import { Role } from "@/lib/types";
 import { checkoutCart } from "@/lib/checkout";
 import { requireAuth, handleApiError, json } from "@/lib/api-route";
 

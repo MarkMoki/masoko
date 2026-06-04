@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
-import { Role } from "@prisma/client";
+import { Role } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { LogoutButton } from "@/components/layout/logout-button";
 import { CartBadge } from "@/components/layout/cart-badge";
