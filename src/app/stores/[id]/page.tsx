@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
 import { ProductCard } from "@/components/products/product-card";
 import { getCurrentUser, getSession } from "@/lib/auth";
 

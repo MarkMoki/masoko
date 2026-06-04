@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { OrderPaymentForm } from "@/components/orders/order-payment-form";
 import { Badge } from "@/components/ui/badge";

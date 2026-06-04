@@ -1,6 +1,4 @@
 import { z } from "zod";
-import { Role, SellerOrderStatus } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
 import { canTransitionSellerOrder } from "@/lib/seller-order-status";
 import { recalculateMasterOrderStatus } from "@/lib/order-status";
 import {

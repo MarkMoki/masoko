@@ -1,4 +1,3 @@
-import { prisma } from "@/lib/prisma";
 import { getCurrentUser, getSession } from "@/lib/auth";
 import { getMarketplacePromos } from "@/lib/marketplace";
 import { ProductCard } from "@/components/products/product-card";

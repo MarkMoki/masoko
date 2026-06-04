@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
 import { ProductDetailView } from "@/components/products/product-detail-view";
 
 export default async function ProductDetailPage({

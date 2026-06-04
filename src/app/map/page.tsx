@@ -1,4 +1,3 @@
-import { prisma } from "@/lib/prisma";
 import { MapPageClient } from "@/components/map/map-page-client";
 
 export default async function MapPage() {
