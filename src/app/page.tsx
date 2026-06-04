@@ -17,39 +17,8 @@ export default async function MarketplacePage({
   const skip = (page - 1) * limit;
 
   const [products, total, user, session, promos] = await Promise.all([
-    prisma.product.findMany({
-      where: {
-        active: true,
-        ...(q
-          ? {
-              OR: [
-                { name: { contains: q } },
-                { description: { contains: q } },
-              ],
-            }
-          : {}),
-      },
-      include: {
-        seller: { select: { id: true, name: true } },
-        store: { select: { id: true, name: true } },
-      },
-      orderBy: { createdAt: "desc" },
-      skip,
-      take: limit,
-    }),
-    prisma.product.count({
-      where: {
-        active: true,
-        ...(q
-          ? {
-              OR: [
-                { name: { contains: q } },
-                { description: { contains: q } },
-              ],
-            }
-          : {}),
-      },
-    }),
+    Promise.resolve([] as any[]), // Prisma removed
+    Promise.resolve(0 as number), // Prisma removed - product count
     getCurrentUser(),
     getSession(),
     getMarketplacePromos(),

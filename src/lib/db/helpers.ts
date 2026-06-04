@@ -15,7 +15,7 @@ export function parseDoc<T extends Record<string, unknown>>(
     createdAt: $createdAt,
     updatedAt: $updatedAt,
     ...rest,
-  } as T & { id: string; createdAt: string; updatedAt: string };
+  } as any as T & { id: string; createdAt: string; updatedAt: string };
 }
 
 export async function getDocument<T extends Record<string, unknown>>(

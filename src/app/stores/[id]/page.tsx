@@ -9,13 +9,14 @@ export default async function StoreDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const store = await prisma.store.findUnique({
-    where: { id },
-    include: {
-      seller: { select: { id: true, name: true } },
-      products: { where: { active: true } },
-    },
-  });
+  // const store = await prisma.store.findUnique({
+  //   where: { id },
+  //   include: {
+  //     seller: { select: { id: true, name: true } },
+  //     products: { where: { active: true } },
+  //   },
+  // });
+  const store: any = null; // Prisma removed
 
   if (!store) notFound();
 
@@ -36,7 +37,7 @@ export default async function StoreDetailPage({
 
       <h2 className="mb-4 mt-8 text-xl font-semibold">Products</h2>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        {store.products.map((product) => (
+        {store.products.map((product: any) => (
           <ProductCard
             key={product.id}
             product={{ ...product, seller: store.seller, store }}

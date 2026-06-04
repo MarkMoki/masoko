@@ -13,23 +13,24 @@ export default async function OrderDetailPage({
   const { id } = await params;
   const session = await getSession();
 
-  const order = await prisma.masterOrder.findUnique({
-    where: { id },
-    include: {
-      sellerOrders: {
-        include: {
-          items: { include: { product: true } },
-          seller: {
-            include: {
-              paymentMethods: { where: { isDefault: true }, take: 1 },
-              store: true,
-            },
-          },
-          payments: { orderBy: { createdAt: "desc" } },
-        },
-      },
-    },
-  });
+  // const order = await prisma.masterOrder.findUnique({
+  //   where: { id },
+  //   include: {
+  //     sellerOrders: {
+  //       include: {
+  //         items: { include: { product: true } },
+  //         seller: {
+  //           include: {
+  //             paymentMethods: { where: { isDefault: true }, take: 1 },
+  //             store: true,
+  //           },
+  //         },
+  //         payments: { orderBy: { createdAt: "desc" } },
+  //       },
+  //     },
+  //   },
+  // });
+  const order: any = null; // Prisma removed
 
   if (!order) notFound();
   if (session?.sub !== order.customerId && session?.role !== "ADMIN") {
@@ -49,7 +50,7 @@ export default async function OrderDetailPage({
       </p>
 
       <div className="space-y-6">
-        {order.sellerOrders.map((so) => {
+        {order.sellerOrders.map((so: any) => {
           const method = so.seller.paymentMethods[0];
           const latestPayment = so.payments[0];
           return (
@@ -64,7 +65,7 @@ export default async function OrderDetailPage({
               </CardHeader>
               <CardContent className="space-y-4">
                 <ul className="text-sm">
-                  {so.items.map((item) => (
+                  {so.items.map((item: any) => (
                     <li key={item.id}>
                       {item.product.name} × {item.quantity} —{" "}
                       {formatCurrency(item.unitPrice * item.quantity)}

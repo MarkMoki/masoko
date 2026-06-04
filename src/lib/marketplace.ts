@@ -1,10 +1,6 @@
 import { getSiteConfig, listMarketplacePromos, aggregateMostSoldProducts } from "./db/config-promos";
 import { enrichProduct, getProductById } from "./db/products";
-import type { MarketplacePromo } from "../types";
-
-export async function getSiteConfig() {
-  return getSiteConfig();
-}
+import type { MarketplacePromo } from "./types";
 
 export async function getMarketplacePromos() {
   const config = await getSiteConfig();

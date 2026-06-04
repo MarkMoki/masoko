@@ -13,7 +13,6 @@ import {
   updatePayment,
   updateSellerOrder,
 } from "./db";
-import { recalculateMasterOrderStatus } from "./order-status";
 
 export async function recalculateMasterOrderStatus(masterOrderId: string) {
   const master = await getMasterOrderById(masterOrderId);

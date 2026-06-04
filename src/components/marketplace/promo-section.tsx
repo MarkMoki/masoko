@@ -94,7 +94,7 @@ export function PromoSection({
         <div>
           <h2 className="mb-3 text-lg font-semibold">Most sold</h2>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-5">
-            {promos.mostSold.map((product) => (
+            {promos.mostSold.map((product: any) => (
               <ProductCard
                 key={product.id}
                 product={product}

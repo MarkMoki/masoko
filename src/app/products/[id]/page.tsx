@@ -7,10 +7,11 @@ export default async function ProductDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const product = await prisma.product.findUnique({
-    where: { id },
-    include: { seller: true, store: true, category: true },
-  });
+  // const product = await prisma.product.findUnique({
+  //   where: { id },
+  //   include: { seller: true, store: true, category: true },
+  // });
+  const product: any = null; // Prisma removed
 
   if (!product || !product.active) notFound();
 

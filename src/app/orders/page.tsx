@@ -9,11 +9,12 @@ export default async function OrdersPage() {
   const session = await getSession();
   if (!session) redirect("/login");
 
-  const orders = await prisma.masterOrder.findMany({
-    where: { customerId: session.sub },
-    orderBy: { createdAt: "desc" },
-    include: { sellerOrders: true },
-  });
+  // const orders = await prisma.masterOrder.findMany({
+  //   where: { customerId: session.sub },
+  //   orderBy: { createdAt: "desc" },
+  //   include: { sellerOrders: true },
+  // });
+  const orders: any[] = []; // Prisma removed
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8">

@@ -1,11 +1,11 @@
 import { SellerOrderStatus } from "@/lib/types";
 
 const FLOW: Record<SellerOrderStatus, SellerOrderStatus[]> = {
-  PENDING_PAYMENT: ["CANCELLED"],
-  PAYMENT_SUBMITTED: ["CANCELLED"],
-  PAID: ["PROCESSING", "CANCELLED"],
-  PROCESSING: ["READY", "CANCELLED"],
-  READY: ["DELIVERED", "CANCELLED"],
+  PENDING_PAYMENT: [SellerOrderStatus.CANCELLED],
+  PAYMENT_SUBMITTED: [SellerOrderStatus.CANCELLED],
+  PAID: [SellerOrderStatus.PROCESSING, SellerOrderStatus.CANCELLED],
+  PROCESSING: [SellerOrderStatus.READY, SellerOrderStatus.CANCELLED],
+  READY: [SellerOrderStatus.DELIVERED, SellerOrderStatus.CANCELLED],
   DELIVERED: [],
   CANCELLED: [],
 };

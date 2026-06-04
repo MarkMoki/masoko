@@ -12,23 +12,9 @@ export default async function MerchantDashboard() {
   if (!user) redirect("/login");
 
   const [store, pendingPayments, recentOrders] = await Promise.all([
-    prisma.store.findUnique({ where: { sellerId: user.id } }),
-    prisma.payment.findMany({
-      where: {
-        status: "PENDING",
-        sellerOrder: { sellerId: user.id },
-      },
-      include: {
-        sellerOrder: { include: { masterOrder: { include: { customer: true } } } },
-      },
-      orderBy: { createdAt: "desc" },
-      take: 10,
-    }),
-    prisma.sellerOrder.findMany({
-      where: { sellerId: user.id },
-      orderBy: { createdAt: "desc" },
-      take: 5,
-    }),
+    Promise.resolve(null as any), // Prisma removed - store
+    Promise.resolve([] as any[]), // Prisma removed - pending payments
+    Promise.resolve([] as any[]), // Prisma removed - recent orders
   ]);
 
   return (

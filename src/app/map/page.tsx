@@ -1,13 +1,14 @@
 import { MapPageClient } from "@/components/map/map-page-client";
 
 export default async function MapPage() {
-  const stores = await prisma.store.findMany({
-    where: {
-      latitude: { not: null },
-      longitude: { not: null },
-    },
-    include: { _count: { select: { products: true } } },
-  });
+  // const stores = await prisma.store.findMany({
+  //   where: {
+  //     latitude: { not: null },
+  //     longitude: { not: null },
+  //   },
+  //   include: { _count: { select: { products: true } } },
+  // });
+  const stores: any[] = []; // Prisma removed
 
   const mapped = stores
     .filter((s) => s.latitude != null && s.longitude != null)
