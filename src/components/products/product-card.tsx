@@ -21,7 +21,7 @@ type ProductCardProps = {
     id: string;
     name: string;
     price: number;
-    imageUrl: string | null;
+    imageUrl: string | null | undefined;
     sellerId: string;
     store?: { name: string } | null;
     seller?: { name: string } | null;
