@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
 import { getDevicePosition } from "@/lib/geolocation";
+import { useToast } from "@/hooks/use-toast";
 import { Crosshair, Loader2, MapPin } from "lucide-react";
 
 const StoreMap = dynamic(
@@ -25,6 +26,7 @@ export default function MerchantMapPage() {
   const [saved, setSaved] = useState(false);
   const [gpsLoading, setGpsLoading] = useState(false);
   const [gpsError, setGpsError] = useState("");
+  const { toast } = useToast();
 
   useEffect(() => {
     Promise.all([
@@ -55,10 +57,19 @@ export default function MerchantMapPage() {
       const pos = await getDevicePosition();
       setPosition([pos.latitude, pos.longitude]);
       setSaved(false);
+      toast({
+        title: "Location found",
+        description: "GPS coordinates captured successfully.",
+        variant: "success",
+      });
     } catch (e) {
-      setGpsError(
-        e instanceof Error ? e.message : "Could not get GPS location"
-      );
+      const message = e instanceof Error ? e.message : "Could not get GPS location";
+      setGpsError(message);
+      toast({
+        title: "GPS error",
+        description: message,
+        variant: "error",
+      });
     } finally {
       setGpsLoading(false);
     }
@@ -66,14 +77,27 @@ export default function MerchantMapPage() {
 
   async function saveLocation() {
     if (!storeId || !position) return;
-    await apiFetch(`/api/stores/${storeId}`, {
-      method: "PATCH",
-      body: JSON.stringify({
-        latitude: position[0],
-        longitude: position[1],
-      }),
-    });
-    setSaved(true);
+    try {
+      await apiFetch(`/api/stores/${storeId}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          latitude: position[0],
+          longitude: position[1],
+        }),
+      });
+      setSaved(true);
+      toast({
+        title: "Location saved",
+        description: "Your store location has been updated.",
+        variant: "success",
+      });
+    } catch (err) {
+      toast({
+        title: "Save failed",
+        description: err instanceof Error ? err.message : "Could not save location",
+        variant: "error",
+      });
+    }
   }
 
   return (

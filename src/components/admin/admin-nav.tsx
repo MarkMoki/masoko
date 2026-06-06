@@ -10,13 +10,14 @@ const links = [
   { href: "/admin/products", label: "Products" },
   { href: "/admin/pricing", label: "Seller pricing" },
   { href: "/admin/promos", label: "Offers & promos" },
+  { href: "/admin/analytics", label: "Analytics" },
 ];
 
 export function AdminNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="mb-8 flex flex-wrap gap-2 border-b pb-4">
+    <nav className="mb-8 flex flex-wrap gap-2 border-b pb-4" aria-label="Admin navigation">
       {links.map((link) => (
         <Link
           key={link.href}
@@ -27,6 +28,7 @@ export function AdminNav() {
               ? "bg-primary text-primary-foreground"
               : "text-muted-foreground hover:bg-muted hover:text-foreground"
           )}
+          aria-current={pathname === link.href ? "page" : undefined}
         >
           {link.label}
         </Link>

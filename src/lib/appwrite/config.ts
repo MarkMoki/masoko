@@ -28,4 +28,8 @@ export const COLLECTIONS = {
   sellerPricingConfig: "seller_pricing_config",
   sellerPlans: "seller_plans",
   marketplacePromos: "marketplace_promos",
+  wishlists: "wishlists",
+  wishlistItems: "wishlist_items",
+  reviews: "reviews",
+  analytics: "analytics",
 } as const;

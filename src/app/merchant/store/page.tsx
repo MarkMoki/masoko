@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiFetch } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 type Store = {
   id: string;
@@ -21,6 +22,7 @@ export default function MerchantStorePage() {
   const router = useRouter();
   const [store, setStore] = useState<Store | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     fetch("/api/stores")
@@ -53,19 +55,36 @@ export default function MerchantStorePage() {
       address: (form.get("address") as string) || undefined,
     };
 
-    if (store) {
-      await apiFetch(`/api/stores/${store.id}`, {
-        method: "PATCH",
-        body: JSON.stringify(payload),
-      });
-    } else {
-      await apiFetch("/api/stores", {
-        method: "POST",
-        body: JSON.stringify(payload),
+    try {
+      if (store) {
+        await apiFetch(`/api/stores/${store.id}`, {
+          method: "PATCH",
+          body: JSON.stringify(payload),
+        });
+        toast({
+          title: "Store updated",
+          description: "Your store information has been saved.",
+          variant: "success",
+        });
+      } else {
+        await apiFetch("/api/stores", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+        toast({
+          title: "Store created",
+          description: "Your store has been created successfully.",
+          variant: "success",
+        });
+      }
+      router.refresh();
+    } catch (err) {
+      toast({
+        title: "Save failed",
+        description: err instanceof Error ? err.message : "Could not save store",
+        variant: "error",
       });
     }
-    router.refresh();
-    window.location.reload();
   }
 
   if (loading) return <p className="p-8">Loading...</p>;

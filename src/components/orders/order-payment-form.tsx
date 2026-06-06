@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiFetch } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 export function OrderPaymentForm({
   sellerOrderId,
@@ -16,6 +17,7 @@ export function OrderPaymentForm({
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -30,9 +32,19 @@ export function OrderPaymentForm({
           amount,
         }),
       });
+      toast({
+        title: "Payment submitted",
+        description: "Your payment is being verified.",
+        variant: "success",
+      });
       router.refresh();
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed");
+      const message = err instanceof Error ? err.message : "Failed";
+      toast({
+        title: "Payment failed",
+        description: message,
+        variant: "error",
+      });
     } finally {
       setLoading(false);
     }

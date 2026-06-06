@@ -34,4 +34,12 @@
   }
 }
 
+@layer utilities {
+  @media (max-width: 639px) {
+    .container {
+      @apply px-4;
+    }
+  }
+}
+
 @import "leaflet/dist/leaflet.css";

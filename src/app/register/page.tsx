@@ -8,11 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiFetch } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 export default function RegisterPage() {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -29,10 +31,21 @@ export default function RegisterPage() {
           password: form.get("password"),
         }),
       });
+      toast({
+        title: "Account created!",
+        description: "Welcome to maSoKo. You're being redirected.",
+        variant: "success",
+      });
       router.push("/");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Registration failed");
+      const message = err instanceof Error ? err.message : "Registration failed";
+      setError(message);
+      toast({
+        title: "Registration failed",
+        description: message,
+        variant: "error",
+      });
     } finally {
       setLoading(false);
     }

@@ -8,11 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiFetch } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -27,12 +29,23 @@ export default function LoginPage() {
           password: form.get("password"),
         }),
       });
+      toast({
+        title: "Welcome back!",
+        description: "You've been logged in successfully.",
+        variant: "success",
+      });
       if (data.user.role === "ADMIN") router.push("/admin");
       else if (data.user.role === "SELLER") router.push("/merchant");
       else router.push("/");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      const message = err instanceof Error ? err.message : "Login failed";
+      setError(message);
+      toast({
+        title: "Login failed",
+        description: message,
+        variant: "error",
+      });
     } finally {
       setLoading(false);
     }

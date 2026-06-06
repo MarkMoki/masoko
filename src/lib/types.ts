@@ -214,3 +214,38 @@ export type MarketplacePromo = {
   updatedAt: string;
   product?: Product | null;
 };
+
+export type Review = {
+  id: string;
+  productId: string;
+  userId: string;
+  rating: number;
+  comment?: string | null;
+  createdAt: string;
+  user?: Pick<User, "id" | "name">;
+};
+
+export type Wishlist = {
+  id: string;
+  userId: string;
+  productId: string;
+  createdAt: string;
+};
+
+export type WishlistItem = {
+  id: string;
+  userId: string;
+  productId: string;
+  product?: Product;
+  createdAt: string;
+};
+
+export type Analytics = {
+  id: string;
+  date: string;
+  page: string;
+  visits: number;
+  uniqueVisitors: number;
+  visitorIps?: string[];
+  createdAt: string;
+};

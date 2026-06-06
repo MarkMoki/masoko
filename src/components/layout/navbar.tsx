@@ -4,7 +4,7 @@ import { Role } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { LogoutButton } from "@/components/layout/logout-button";
 import { CartBadge } from "@/components/layout/cart-badge";
-import { MapPin, Store } from "lucide-react";
+import { MapPin, Store, Heart } from "lucide-react";
 
 export async function Navbar() {
   const user = await getCurrentUser();
@@ -17,8 +17,8 @@ export async function Navbar() {
           maSoKo
         </Link>
 
-        <nav className="flex items-center gap-2 text-sm">
-          <Link href="/" className="px-2 py-1 hover:text-primary">
+        <nav className="flex items-center gap-2 text-sm" aria-label="Main navigation">
+          <Link href="/" className="px-2 py-1 hover:text-primary" data-tour="search">
             Marketplace
           </Link>
           <Link href="/map" className="flex items-center gap-1 px-2 py-1 hover:text-primary">
@@ -28,6 +28,10 @@ export async function Navbar() {
 
           {user?.role === Role.CUSTOMER && (
             <>
+              <Link href="/wishlist" className="px-2 py-1 hover:text-primary" data-tour="wishlist">
+                <Heart className="h-4 w-4" />
+                <span className="hidden sm:inline ml-1">Wishlist</span>
+              </Link>
               <CartBadge />
               <Link href="/orders" className="px-2 py-1 hover:text-primary">
                 Orders
@@ -48,7 +52,7 @@ export async function Navbar() {
           )}
 
           {user ? (
-            <div className="ml-2 flex items-center gap-2">
+            <div className="ml-2 flex items-center gap-2" data-tour="account">
               <span className="hidden text-muted-foreground sm:inline">{user.name}</span>
               <LogoutButton />
             </div>

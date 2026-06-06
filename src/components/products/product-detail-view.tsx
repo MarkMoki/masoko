@@ -2,13 +2,15 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
 import { apiFetch } from "@/lib/api";
 import { notifyCartUpdated } from "@/components/layout/cart-badge";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
+import { StarRating } from "@/components/ui/star-rating";
 import {
   ChevronLeft,
   MapPin,
@@ -17,6 +19,7 @@ import {
   Plus,
   ShoppingCart,
   Store,
+  MessageSquare,
 } from "lucide-react";
 
 type ProductDetail = {
@@ -31,10 +34,83 @@ type ProductDetail = {
   seller: { name: string };
 };
 
+type Review = {
+  id: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  user?: { name: string };
+};
+
 export function ProductDetailView({ product }: { product: ProductDetail }) {
   const router = useRouter();
   const [qty, setQty] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [averageRating, setAverageRating] = useState(0);
+  const [reviewCount, setReviewCount] = useState(0);
+  const [newRating, setNewRating] = useState(5);
+  const [newComment, setNewComment] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const { toast } = useToast();
+  const [isNative, setIsNative] = useState(false);
+
+  useEffect(() => {
+    setIsNative(typeof window !== "undefined" && !!(window as any).Capacitor?.isNativePlatform?.());
+    loadReviews();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function loadReviews() {
+    try {
+      const data = await apiFetch<{ reviews: Review[]; averageRating: number; reviewCount: number }>(
+        `/api/reviews?productId=${product.id}`
+      );
+      setReviews(data.reviews);
+      setAverageRating(data.averageRating || 0);
+      setReviewCount(data.reviewCount || 0);
+    } catch (e) {
+      // Failed to load reviews
+    }
+  }
+
+  async function submitReview() {
+    if (!newComment.trim()) {
+      toast({
+        title: "Error",
+        description: "Comment is required",
+        variant: "error",
+      });
+      return;
+    }
+    setSubmittingReview(true);
+    try {
+      await apiFetch("/api/reviews", {
+        method: "POST",
+        body: JSON.stringify({
+          productId: product.id,
+          rating: newRating,
+          comment: newComment,
+        }),
+      });
+      toast({
+        title: "Review submitted",
+        description: "Thank you for your review!",
+        variant: "success",
+      });
+      setNewComment("");
+      loadReviews();
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Failed to submit review";
+      toast({
+        title: "Error",
+        description: message,
+        variant: "error",
+      });
+    } finally {
+      setSubmittingReview(false);
+    }
+  }
 
   async function addToCart() {
     setLoading(true);
@@ -44,9 +120,23 @@ export function ProductDetailView({ product }: { product: ProductDetail }) {
         body: JSON.stringify({ productId: product.id, quantity: qty }),
       });
       notifyCartUpdated();
-      router.push("/cart");
+      toast({
+        title: "Added to cart",
+        description: `${product.name} added to your cart`,
+        variant: "success",
+      });
+      if (isNative) {
+        window.location.href = "/cart";
+      } else {
+        router.push("/cart");
+      }
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Please login as a customer");
+      const message = e instanceof Error ? e.message : "Please login as a customer";
+      toast({
+        title: "Error",
+        description: message,
+        variant: "error",
+      });
     } finally {
       setLoading(false);
     }
@@ -113,6 +203,15 @@ export function ProductDetailView({ product }: { product: ProductDetail }) {
               <span className="text-muted-foreground">Sold by {product.seller.name}</span>
             </div>
 
+            {averageRating > 0 && (
+              <div className="flex items-center gap-2">
+                <StarRating rating={averageRating} readOnly />
+                <span className="text-sm text-muted-foreground">
+                  ({reviewCount} reviews)
+                </span>
+              </div>
+            )}
+
             {product.description && (
               <div className="rounded-lg border bg-muted/30 p-4">
                 <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
@@ -152,10 +251,10 @@ export function ProductDetailView({ product }: { product: ProductDetail }) {
                   className="w-full gap-2"
                   size="lg"
                   onClick={addToCart}
-                  disabled={loading}
+                  loading={loading}
                 >
                   <ShoppingCart className="h-5 w-5" />
-                  {loading ? "Adding..." : "Add to cart"}
+                  Add to cart
                 </Button>
                 <p className="mt-2 text-center text-xs text-muted-foreground">
                   Subtotal: {formatCurrency(product.price * qty)}
@@ -171,6 +270,60 @@ export function ProductDetailView({ product }: { product: ProductDetail }) {
                 </Link>
               </Button>
             )}
+
+            <div className="border-t pt-6">
+              <h2 className="mb-4 flex items-center gap-2 font-semibold">
+                <MessageSquare className="h-5 w-5" />
+                Reviews
+              </h2>
+
+              <div className="mb-4 space-y-4">
+                <div>
+                  <p className="mb-2 text-sm font-medium">Your Rating</p>
+                  <StarRating rating={newRating} onRatingChange={setNewRating} />
+                </div>
+                <textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Write a review..."
+                  className="w-full rounded-md border p-2 text-sm"
+                  rows={3}
+                />
+                <Button
+                  size="sm"
+                  onClick={submitReview}
+                  loading={submittingReview}
+                  disabled={!newComment.trim()}
+                >
+                  Submit Review
+                </Button>
+              </div>
+
+              {reviews.length > 0 ? (
+                <div className="space-y-4">
+                  {reviews.map((review) => (
+                    <div key={review.id} className="border-b pb-3 last:border-0">
+                      <div className="flex items-center gap-2">
+                        <StarRating rating={review.rating} readOnly size="sm" />
+                        <span className="text-sm font-medium">
+                          {review.user?.name || "Anonymous"}
+                        </span>
+                      </div>
+                      {review.comment && (
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {review.comment}
+                        </p>
+                      )}
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {new Date(review.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No reviews yet</p>
+              )}
+            </div>
           </div>
         </div>
       </div>

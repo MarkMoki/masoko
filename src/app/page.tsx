@@ -4,12 +4,16 @@ import { ProductCard } from "@/components/products/product-card";
 import { PromoSection } from "@/components/marketplace/promo-section";
 import { Suspense } from "react";
 import { MarketplaceSearch } from "@/components/products/marketplace-search";
+import { FilterSidebar } from "@/components/products/filter-sidebar";
+import { EmptyProductsState } from "@/components/ui/empty-state";
 import { headers } from "next/headers";
+import { listDocuments, Query, COLLECTIONS } from "@/lib/db/helpers";
+import type { Product, Category } from "@/lib/types";
 
 export default async function MarketplacePage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; category?: string; minPrice?: string; maxPrice?: string; sortBy?: string }>;
 }) {
   const params = await searchParams;
   const q = params.q ?? "";
@@ -19,8 +23,15 @@ export default async function MarketplacePage({
 
   const userAgent = (await headers()).get("user-agent") ?? "";
 
+  // Fetch categories for filter sidebar
+  const categoriesResult = await listDocuments<Category>(COLLECTIONS.categories, [
+    Query.limit(100),
+    Query.orderAsc("name"),
+  ]);
+  const categories = categoriesResult.documents;
+
   const [products, total, user, session, promos] = await Promise.all([
-    Promise.resolve([] as any[]),
+    Promise.resolve([] as Product[]),
     Promise.resolve(0 as number),
     getCurrentUser(),
     getSession(),
@@ -30,70 +41,74 @@ export default async function MarketplacePage({
   const totalPages = Math.ceil(total / limit);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Marketplace</h1>
-        <p className="text-muted-foreground">
+    <div className="container mx-auto px-4 py-6 md:py-8 pb-16 md:pb-0">
+      <div className="mb-6 md:mb-8">
+        <h1 className="text-2xl md:text-3xl font-bold">Marketplace</h1>
+        <p className="text-muted-foreground text-sm md:text-base">
           Shop from multiple sellers in one cart
         </p>
       </div>
 
-      <Suspense fallback={<div className="mb-6 h-10 max-w-md animate-pulse rounded bg-muted" />}>
-        <MarketplaceSearch defaultQuery={q} />
-      </Suspense>
+      <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+        <FilterSidebar categories={categories} />
 
-      {!q && page === 1 && (
-        <PromoSection
-          promos={promos}
-          sessionRole={session?.role}
-          currentUserId={user?.id}
-          initialUserAgent={userAgent}
-          apkDownloadUrl="/downloads/maSoKo.apk"
-        />
-      )}
+        <div className="flex-1">
+          <Suspense fallback={<div className="mb-4 md:mb-6 h-9 md:h-10 max-w-md animate-pulse rounded bg-muted" />}>
+            <MarketplaceSearch defaultQuery={q} />
+          </Suspense>
 
-      <h2 className="mb-4 text-lg font-semibold">All products</h2>
-
-      {products.length === 0 ? (
-        <p className="py-12 text-center text-muted-foreground">
-          No products found.
-        </p>
-      ) : (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
+          {!q && page === 1 && (
+            <PromoSection
+              promos={promos}
               sessionRole={session?.role}
               currentUserId={user?.id}
+              initialUserAgent={userAgent}
+              apkDownloadUrl="/api/download-apk"
             />
-          ))}
-        </div>
-      )}
+          )}
 
-      {totalPages > 1 && (
-        <div className="mt-8 flex justify-center gap-2">
-          {page > 1 && (
-            <a
-              href={`/?page=${page - 1}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
-              className="rounded border px-4 py-2 text-sm hover:bg-muted"
-            >
-              Previous
-            </a>
+          <h2 className="mb-3 md:mb-4 text-lg font-semibold">All products</h2>
+
+          {products.length === 0 ? (
+            <EmptyProductsState searchQuery={q} />
+          ) : (
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
+              {products.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  sessionRole={session?.role}
+                  currentUserId={user?.id}
+                />
+              ))}
+            </div>
           )}
-          <span className="flex items-center px-4 text-sm text-muted-foreground">
-            Page {page} of {totalPages}
-          </span>
-          {page < totalPages && (
-            <a
-              href={`/?page=${page + 1}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
-              className="rounded border px-4 py-2 text-sm hover:bg-muted"
-            >
-              Next
-            </a>
+
+          {totalPages > 1 && (
+            <div className="mt-6 md:mt-8 flex justify-center gap-2">
+              {page > 1 && (
+                <a
+                  href={`/?page=${page - 1}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
+                  className="rounded border px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm hover:bg-muted"
+                >
+                  Previous
+                </a>
+              )}
+              <span className="flex items-center px-3 md:px-4 text-xs md:text-sm text-muted-foreground">
+                Page {page} of {totalPages}
+              </span>
+              {page < totalPages && (
+                <a
+                  href={`/?page=${page + 1}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
+                  className="rounded border px-3 md:px-4 py-1.5 md:py-2 text-xs md:text-sm hover:bg-muted"
+                >
+                  Next
+                </a>
+              )}
+            </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

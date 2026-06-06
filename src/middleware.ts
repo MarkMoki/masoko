@@ -27,6 +27,25 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const session = await getSessionFromRequest(req);
 
+  // Track analytics for public pages
+  if (
+    !pathname.startsWith("/api") &&
+    !pathname.startsWith("/admin") &&
+    !pathname.startsWith("/merchant") &&
+    !pathname.includes(".") &&
+    pathname !== "/_next"
+  ) {
+    const ip = req.headers.get("x-forwarded-for") || "unknown";
+    const today = new Date().toISOString().split("T")[0];
+
+    // Fire-and-forget analytics tracking
+    fetch(`${req.nextUrl.origin}/api/analytics/track`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ page: pathname, date: today, ip }),
+    }).catch(() => {});
+  }
+
   const adminRoutes = pathname.startsWith("/admin");
   const merchantRoutes = pathname.startsWith("/merchant");
   const customerRoutes =
@@ -65,5 +84,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/merchant/:path*", "/cart", "/checkout", "/orders/:path*"],
+  matcher: ["/((?!api|_next|.*\\..*).*)"],
 };

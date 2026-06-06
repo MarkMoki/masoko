@@ -1,9 +1,9 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Store } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 function detectAppMode(ua: string): boolean {
   const looksLikeWebView =
@@ -28,6 +28,7 @@ export function AppDownloadBanner({
   downloadUrl?: string;
 }) {
   const [isApp, setIsApp] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const ua =
@@ -38,6 +39,14 @@ export function AppDownloadBanner({
   }, [userAgent]);
 
   if (isApp) return null;
+
+  const handleDownload = () => {
+    toast({
+      title: "Downloading APK",
+      description: "The download will start shortly. Check your downloads folder.",
+      variant: "success",
+    });
+  };
 
   return (
     <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-primary/10 to-primary/5 p-6 shadow-sm">
@@ -57,6 +66,7 @@ export function AppDownloadBanner({
         <a
           href={downloadUrl}
           download
+          onClick={handleDownload}
           className="inline-flex items-center gap-2 rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
         >
           <Store className="h-4 w-4" />
@@ -151,7 +161,7 @@ export function Footer({
         </div>
 
         <div className="my-8">
-          <AppDownloadBanner userAgent={userAgent} downloadUrl="/downloads/maSoKo.apk" />
+          <AppDownloadBanner userAgent={userAgent} downloadUrl="/api/download-apk" />
         </div>
 
         <div className="border-t pt-6 text-center text-sm text-muted-foreground">

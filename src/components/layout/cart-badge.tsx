@@ -27,11 +27,16 @@ export function CartBadge() {
     <Link
       href="/cart"
       className="relative flex items-center gap-1 px-2 py-1 hover:text-primary"
+      data-tour="cart"
+      aria-label={`Cart with ${count} items`}
     >
       <ShoppingCart className="h-4 w-4" />
       <span className="hidden sm:inline">Cart</span>
       {count > 0 && (
-        <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+        <span
+          className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground"
+          aria-live="polite"
+        >
           {count > 99 ? "99+" : count}
         </span>
       )}

@@ -5,6 +5,22 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ProductCard } from "@/components/products/product-card";
 import { Role } from "@/lib/types";
+import { useToast } from "@/hooks/use-toast";
+
+function detectAppMode(ua: string): boolean {
+  const looksLikeWebView =
+    /wv/.test(ua) ||
+    /WebView/.test(ua) ||
+    (/Android/.test(ua) && /Chrome/.test(ua));
+
+  let native = false;
+  try {
+    const cap = (window as any).Capacitor;
+    if (cap?.isNativePlatform) native = cap.isNativePlatform();
+  } catch {}
+
+  return looksLikeWebView || native;
+}
 
 export type PromoData = {
   enabled: boolean;
@@ -27,6 +43,7 @@ export function PromoSection({
   apkDownloadUrl?: string;
 }) {
   const [isApp, setIsApp] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const ua =
@@ -47,6 +64,14 @@ export function PromoSection({
 
     setIsApp(looksLikeWebView || native);
   }, [initialUserAgent]);
+
+  const handleApkDownload = () => {
+    toast({
+      title: "Downloading APK",
+      description: "The download will start shortly. Check your downloads folder.",
+      variant: "success",
+    });
+  };
 
   if (!promos.enabled) return null;
 
@@ -131,6 +156,7 @@ export function PromoSection({
                 <a
                   href={apkDownloadUrl}
                   download
+                  onClick={handleApkDownload}
                   className="mt-4 inline-block rounded bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
                 >
                   Download APK

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
 import { canTransitionSellerOrder } from "@/lib/seller-order-status";
+import { useToast } from "@/hooks/use-toast";
 
 const ACTIONS: { status: SellerOrderStatus; label: string; variant?: "default" | "outline" | "destructive" }[] = [
   { status: SellerOrderStatus.PROCESSING, label: "Processing", variant: "outline" },
@@ -21,12 +22,18 @@ export function SellerOrderActions({
   currentStatus: SellerOrderStatus;
 }) {
   const router = useRouter();
+  const { toast } = useToast();
 
   async function updateStatus(status: SellerOrderStatus) {
     if (!confirm(`Update order to ${status.replace(/_/g, " ")}?`)) return;
     await apiFetch(`/api/seller-orders/${orderId}/status`, {
       method: "PATCH",
       body: JSON.stringify({ status }),
+    });
+    toast({
+      title: "Order updated",
+      description: `Status changed to ${status.replace(/_/g, " ")}`,
+      variant: "success",
     });
     router.refresh();
   }

@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { formatCurrency } from "@/lib/utils";
 import { apiFetch } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 type Product = {
   id: string;
@@ -24,6 +25,7 @@ export default function MerchantProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const { toast } = useToast();
 
   async function load() {
     const [data, me] = await Promise.all([
@@ -40,19 +42,32 @@ export default function MerchantProductsPage() {
   async function onCreate(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
-    await apiFetch("/api/products", {
-      method: "POST",
-      body: JSON.stringify({
-        name: form.get("name"),
-        description: form.get("description"),
-        price: parseFloat(form.get("price") as string),
-        stock: parseInt(form.get("stock") as string, 10),
-        imageUrl: imageUrl || undefined,
-      }),
-    });
-    setShowForm(false);
-    setImageUrl(null);
-    load();
+    try {
+      await apiFetch("/api/products", {
+        method: "POST",
+        body: JSON.stringify({
+          name: form.get("name"),
+          description: form.get("description"),
+          price: parseFloat(form.get("price") as string),
+          stock: parseInt(form.get("stock") as string, 10),
+          imageUrl: imageUrl || undefined,
+        }),
+      });
+      setShowForm(false);
+      setImageUrl(null);
+      load();
+      toast({
+        title: "Product created",
+        description: "Your product has been added to the marketplace.",
+        variant: "success",
+      });
+    } catch (err) {
+      toast({
+        title: "Creation failed",
+        description: err instanceof Error ? err.message : "Could not create product",
+        variant: "error",
+      });
+    }
   }
 
   return (

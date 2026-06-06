@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { formatCurrency } from "@/lib/utils";
 import { apiFetch } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 type Product = {
   id: string;
@@ -25,6 +26,7 @@ export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [editing, setEditing] = useState<Product | null>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const { toast } = useToast();
 
   async function load() {
     const data = await apiFetch<{ products: Product[] }>(
@@ -53,6 +55,11 @@ export default function AdminProductsPage() {
     });
     setEditing(null);
     load();
+    toast({
+      title: "Product updated",
+      description: `${editing.name} has been updated`,
+      variant: "success",
+    });
   }
 
   return (
@@ -132,6 +139,11 @@ export default function AdminProductsPage() {
                   if (!confirm("Delete product?")) return;
                   await apiFetch(`/api/products/${p.id}`, { method: "DELETE" });
                   load();
+                  toast({
+                    title: "Product deleted",
+                    description: `${p.name} has been deleted`,
+                    variant: "success",
+                  });
                 }}
               >
                 Delete

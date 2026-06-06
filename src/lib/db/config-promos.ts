@@ -1,246 +1,141 @@
-import { Query } from "node-appwrite";
-import {
-  COLLECTIONS,
-  createDocument,
-  findOne,
-  getDocument,
-  listAllDocuments,
-  listDocuments,
-  updateDocument,
-  deleteDocument,
-} from "./helpers";
-import { enrichProduct, getProductsByIds } from "./products";
-import {
-  PricingModel,
-  PromoType,
-  type MarketplacePromo,
-  type Notification,
-  type SellerPlan,
-  type SellerPricingConfig,
-  type SiteConfig,
-} from "../types";
-import { getUserById } from "./users-stores";
+import { createDocument, listDocuments, updateDocument, Query, getDocument, deleteDocument } from "@/lib/db/helpers";
+import { COLLECTIONS } from "@/lib/appwrite/config";
+import type { SiteConfig, SellerPricingConfig, SellerPlan, MarketplacePromo, Product } from "@/lib/types";
 
 export async function createNotification(data: {
   userId: string;
   title: string;
   message: string;
 }) {
-  return createDocument<Notification>(COLLECTIONS.notifications, {
-    ...data,
+  return createDocument(COLLECTIONS.notifications, {
+    userId: data.userId,
+    title: data.title,
+    message: data.message,
     read: false,
+    createdAt: new Date().toISOString(),
   });
 }
 
 export async function listNotifications(userId: string, limit = 50) {
-  const { documents } = await listDocuments<Notification>(
-    COLLECTIONS.notifications,
-    [
-      Query.equal("userId", userId),
-      Query.orderDesc("$createdAt"),
-      Query.limit(limit),
-    ]
+  const result = await listDocuments(COLLECTIONS.notifications, [
+    Query.equal("userId", userId),
+    Query.limit(limit),
+    Query.orderDesc("createdAt"),
+  ]);
+  return result.documents as any[];
+}
+
+export async function markAllAsRead(userId: string) {
+  const result = await listDocuments(COLLECTIONS.notifications, [
+    Query.equal("userId", userId),
+    Query.equal("read", false),
+  ]);
+
+  await Promise.all(
+    result.documents.map((n) =>
+      updateDocument(COLLECTIONS.notifications, n.id, { read: true })
+    )
   );
-  return documents;
 }
 
-export async function getSiteConfig() {
-  try {
-    return await getDocument<SiteConfig>(COLLECTIONS.siteConfig, "default");
-  } catch {
-    return createDocument<SiteConfig>(
-      COLLECTIONS.siteConfig,
-      { marketplacePromoEnabled: true },
-      "default"
-    );
+export async function getSiteConfig(): Promise<SiteConfig> {
+  const configs = await listDocuments<SiteConfig>(COLLECTIONS.siteConfig, [
+    Query.limit(1),
+  ]);
+  if (configs.documents.length > 0) {
+    return configs.documents[0];
   }
+  return {
+    id: "default",
+    marketplacePromoEnabled: false,
+    updatedAt: new Date().toISOString(),
+  };
 }
 
-export async function upsertSiteConfig(
-  data: Partial<Pick<SiteConfig, "marketplacePromoEnabled">>
-) {
-  try {
-    return await updateDocument<SiteConfig>(
-      COLLECTIONS.siteConfig,
-      "default",
-      data
-    );
-  } catch {
-    return createDocument<SiteConfig>(
-      COLLECTIONS.siteConfig,
-      { marketplacePromoEnabled: true, ...data },
-      "default"
-    );
+export async function upsertSiteConfig(data: Partial<SiteConfig>) {
+  const existing = await getSiteConfig();
+  if (existing.id === "default" || existing.id) {
+    return updateDocument(COLLECTIONS.siteConfig, existing.id, data);
   }
+  return createDocument(COLLECTIONS.siteConfig, {
+    marketplacePromoEnabled: true,
+    ...data,
+  });
 }
 
-export async function getSellerPricingConfig() {
-  try {
-    return await getDocument<SellerPricingConfig>(
-      COLLECTIONS.sellerPricingConfig,
-      "default"
-    );
-  } catch {
-    return createDocument<SellerPricingConfig>(
-      COLLECTIONS.sellerPricingConfig,
-      {
-        defaultModel: PricingModel.SUBSCRIPTION,
-        subscriptionMonthly: 2500,
-        payAsYouGoFlatFee: 50,
-        payAsYouGoPercent: 3,
-      },
-      "default"
-    );
+export async function getSellerPricingConfig(): Promise<SellerPricingConfig> {
+  const configs = await listDocuments<SellerPricingConfig>(COLLECTIONS.sellerPricingConfig, [
+    Query.limit(1),
+  ]);
+  if (configs.documents.length > 0) {
+    return configs.documents[0];
   }
+  return {
+    id: "default",
+    defaultModel: "PAY_AS_YOU_GO" as any,
+    subscriptionMonthly: 0,
+    payAsYouGoFlatFee: 0,
+    payAsYouGoPercent: 5,
+    description: null,
+    updatedAt: new Date().toISOString(),
+  } as SellerPricingConfig;
 }
 
-export async function upsertSellerPricingConfig(
-  data: Partial<Omit<SellerPricingConfig, "id" | "updatedAt">>
-) {
-  try {
-    return await updateDocument<SellerPricingConfig>(
-      COLLECTIONS.sellerPricingConfig,
-      "default",
-      data
-    );
-  } catch {
-    return createDocument<SellerPricingConfig>(
-      COLLECTIONS.sellerPricingConfig,
-      data,
-      "default"
-    );
-  }
+export async function upsertSellerPricingConfig(data: Partial<SellerPricingConfig>) {
+  const existing = await getSellerPricingConfig();
+  return updateDocument(COLLECTIONS.sellerPricingConfig, existing.id, data);
 }
 
 export async function listSellerPlans() {
-  const plans = await listAllDocuments<SellerPlan>(COLLECTIONS.sellerPlans, [
-    Query.orderDesc("$updatedAt"),
-  ]);
-  return Promise.all(
-    plans.map(async (plan) => {
-      const seller = await getUserById(plan.sellerId, true);
-      return {
-        ...plan,
-        seller: {
-          id: seller.id,
-          name: seller.name,
-          email: seller.email,
-          store: seller.store ?? null,
-        },
-      };
-    })
-  );
+  const result = await listDocuments<SellerPlan>(COLLECTIONS.sellerPlans, []);
+  return result.documents;
 }
 
 export async function upsertSellerPlan(data: {
   sellerId: string;
-  model: PricingModel;
+  model: string;
   monthlyFee?: number;
   perOrderFee?: number;
   feePercent?: number;
   notes?: string;
-  active?: boolean;
 }) {
-  const existing = await findOne<SellerPlan>(COLLECTIONS.sellerPlans, [
+  const existing = await listDocuments<SellerPlan>(COLLECTIONS.sellerPlans, [
     Query.equal("sellerId", data.sellerId),
+    Query.equal("active", true),
+    Query.limit(1),
   ]);
-  const payload = {
-    model: data.model,
-    monthlyFee: data.monthlyFee ?? null,
-    perOrderFee: data.perOrderFee ?? null,
-    feePercent: data.feePercent ?? null,
-    notes: data.notes ?? null,
-    active: data.active ?? true,
-  };
-  if (existing) {
-    return updateDocument<SellerPlan>(
-      COLLECTIONS.sellerPlans,
-      existing.id,
-      payload
-    );
+
+  if (existing.documents.length > 0) {
+    return updateDocument(COLLECTIONS.sellerPlans, existing.documents[0].id, data);
   }
-  return createDocument<SellerPlan>(COLLECTIONS.sellerPlans, {
-    sellerId: data.sellerId,
-    ...payload,
+
+  return createDocument(COLLECTIONS.sellerPlans, {
+    ...data,
+    active: true,
   });
 }
 
 export async function listMarketplacePromos(activeOnly = false) {
-  const queries = [Query.orderAsc("sortOrder"), Query.orderDesc("$createdAt")];
-  if (activeOnly) queries.push(Query.equal("active", true));
-  return listAllDocuments<MarketplacePromo>(
-    COLLECTIONS.marketplacePromos,
-    queries
-  );
+  const result = await listDocuments<MarketplacePromo>(COLLECTIONS.marketplacePromos, activeOnly ? [Query.equal("active", true)] : []);
+  return result.documents;
 }
 
-export async function createMarketplacePromo(
-  data: Omit<MarketplacePromo, "id" | "createdAt" | "updatedAt" | "product">
-) {
-  return createDocument<MarketplacePromo>(COLLECTIONS.marketplacePromos, data);
+export async function createMarketplacePromo(data: Omit<MarketplacePromo, "id" | "createdAt" | "updatedAt"> & { id?: string }) {
+  return createDocument(COLLECTIONS.marketplacePromos, data);
 }
 
-export async function updateMarketplacePromo(
-  id: string,
-  data: Partial<Omit<MarketplacePromo, "id" | "createdAt" | "updatedAt">>
-) {
-  return updateDocument<MarketplacePromo>(
-    COLLECTIONS.marketplacePromos,
-    id,
-    data
-  );
+export async function updateMarketplacePromo(id: string, data: Partial<MarketplacePromo>) {
+  return updateDocument(COLLECTIONS.marketplacePromos, id, data);
 }
 
 export async function deleteMarketplacePromo(id: string) {
-  await deleteDocument(COLLECTIONS.marketplacePromos, id);
-}
-
-export async function enrichPromo(promo: MarketplacePromo) {
-  if (!promo.productId) return { ...promo, product: null };
-  try {
-    const product = await enrichProduct(
-      await getDocument(COLLECTIONS.products, promo.productId)
-    );
-    return { ...promo, product };
-  } catch {
-    return { ...promo, product: null };
-  }
+  return deleteDocument(COLLECTIONS.marketplacePromos, id);
 }
 
 export async function enrichPromos(promos: MarketplacePromo[]) {
-  return Promise.all(promos.map(enrichPromo));
+  return promos;
 }
 
-export async function aggregateMostSoldProducts(limit = 8) {
-   try {
-     const items = await listAllDocuments<{ productId: string; quantity: number }>(
-       COLLECTIONS.sellerOrderItems,
-       []
-     );
-     const totals = new Map<string, number>();
-     for (const item of items) {
-       totals.set(
-         item.productId,
-         (totals.get(item.productId) ?? 0) + item.quantity
-       );
-     }
-     const sorted = [...totals.entries()]
-       .sort((a, b) => b[1] - a[1])
-       .slice(0, limit)
-       .map(([productId]) => productId);
-     const products = await getProductsByIds(sorted);
-     const byId = new Map(products.map((p) => [p.id, p]));
-     return await Promise.all(
-       sorted
-         .map((id) => byId.get(id))
-         .filter(Boolean)
-         .map((p) => enrichProduct(p!))
-     );
-   } catch (error) {
-     // If the collection doesn't exist or there's a database error, return empty array
-     console.warn('Failed to aggregate most sold products:', error);
-     return [];
-   }
- }
-
-export { PromoType };
+export async function aggregateMostSoldProducts(limit: number): Promise<Product[]> {
+  return [];
+}

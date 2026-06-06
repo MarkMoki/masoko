@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ImageUpload } from "@/components/ui/image-upload";
 import { apiFetch } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 type Promo = {
   id: string;
@@ -26,6 +27,7 @@ export default function AdminPromosPage() {
   const [promos, setPromos] = useState<Promo[]>([]);
   const [promoEnabled, setPromoEnabled] = useState(true);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const { toast } = useToast();
 
   async function load() {
     const [promoData, settings] = await Promise.all([
@@ -46,27 +48,44 @@ export default function AdminPromosPage() {
       body: JSON.stringify({ marketplacePromoEnabled: !promoEnabled }),
     });
     setPromoEnabled(!promoEnabled);
+    toast({
+      title: promoEnabled ? "Promo section disabled" : "Promo section enabled",
+      variant: "success",
+    });
   }
 
   async function createPromo(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
-    await apiFetch("/api/admin/promos", {
-      method: "POST",
-      body: JSON.stringify({
-        type: form.get("type"),
-        title: form.get("title"),
-        subtitle: form.get("subtitle") || undefined,
-        imageUrl: imageUrl || undefined,
-        linkUrl: form.get("linkUrl") || undefined,
-        productId: form.get("productId") || undefined,
-        sortOrder: parseInt(form.get("sortOrder") as string, 10) || 0,
-        active: true,
-      }),
-    });
-    setImageUrl(null);
-    e.currentTarget.reset();
-    load();
+    try {
+      await apiFetch("/api/admin/promos", {
+        method: "POST",
+        body: JSON.stringify({
+          type: form.get("type"),
+          title: form.get("title"),
+          subtitle: form.get("subtitle") || undefined,
+          imageUrl: imageUrl || undefined,
+          linkUrl: form.get("linkUrl") || undefined,
+          productId: form.get("productId") || undefined,
+          sortOrder: parseInt(form.get("sortOrder") as string, 10) || 0,
+          active: true,
+        }),
+      });
+      setImageUrl(null);
+      e.currentTarget.reset();
+      load();
+      toast({
+        title: "Promo added",
+        description: "New promotional item has been added.",
+        variant: "success",
+      });
+    } catch (err) {
+      toast({
+        title: "Failed to add promo",
+        description: err instanceof Error ? err.message : "Could not create promo",
+        variant: "error",
+      });
+    }
   }
 
   return (
@@ -156,6 +175,10 @@ export default function AdminPromosPage() {
                       body: JSON.stringify({ active: !p.active }),
                     });
                     load();
+                    toast({
+                      title: p.active ? "Promo disabled" : "Promo enabled",
+                      variant: "success",
+                    });
                   }}
                 >
                   {p.active ? "Disable" : "Enable"}
@@ -167,6 +190,10 @@ export default function AdminPromosPage() {
                     if (!confirm("Delete promo?")) return;
                     await apiFetch(`/api/admin/promos/${p.id}`, { method: "DELETE" });
                     load();
+                    toast({
+                      title: "Promo deleted",
+                      variant: "success",
+                    });
                   }}
                 >
                   Delete

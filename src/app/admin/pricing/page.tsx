@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiFetch } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 type PricingConfig = {
   defaultModel: PricingModel;
@@ -33,6 +34,7 @@ export default function AdminPricingPage() {
   const [config, setConfig] = useState<PricingConfig | null>(null);
   const [plans, setPlans] = useState<SellerPlan[]>([]);
   const [sellers, setSellers] = useState<Seller[]>([]);
+  const { toast } = useToast();
 
   async function load() {
     const [pricing, sellersData] = await Promise.all([
@@ -51,38 +53,64 @@ export default function AdminPricingPage() {
   async function saveConfig(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
-    await apiFetch("/api/admin/pricing", {
-      method: "PATCH",
-      body: JSON.stringify({
-        config: {
-          defaultModel: form.get("defaultModel"),
-          subscriptionMonthly: parseFloat(form.get("subscriptionMonthly") as string),
-          payAsYouGoFlatFee: parseFloat(form.get("payAsYouGoFlatFee") as string),
-          payAsYouGoPercent: parseFloat(form.get("payAsYouGoPercent") as string),
-          description: form.get("description"),
-        },
-      }),
-    });
-    load();
+    try {
+      await apiFetch("/api/admin/pricing", {
+        method: "PATCH",
+        body: JSON.stringify({
+          config: {
+            defaultModel: form.get("defaultModel"),
+            subscriptionMonthly: parseFloat(form.get("subscriptionMonthly") as string),
+            payAsYouGoFlatFee: parseFloat(form.get("payAsYouGoFlatFee") as string),
+            payAsYouGoPercent: parseFloat(form.get("payAsYouGoPercent") as string),
+            description: form.get("description"),
+          },
+        }),
+      });
+      load();
+      toast({
+        title: "Pricing saved",
+        description: "Default pricing configuration updated.",
+        variant: "success",
+      });
+    } catch (err) {
+      toast({
+        title: "Save failed",
+        description: err instanceof Error ? err.message : "Could not save pricing",
+        variant: "error",
+      });
+    }
   }
 
   async function savePlan(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
-    await apiFetch("/api/admin/pricing", {
-      method: "PATCH",
-      body: JSON.stringify({
-        plan: {
-          sellerId: form.get("sellerId"),
-          model: form.get("model"),
-          monthlyFee: parseFloat(form.get("monthlyFee") as string) || undefined,
-          perOrderFee: parseFloat(form.get("perOrderFee") as string) || undefined,
-          feePercent: parseFloat(form.get("feePercent") as string) || undefined,
-          notes: form.get("notes"),
-        },
-      }),
-    });
-    load();
+    try {
+      await apiFetch("/api/admin/pricing", {
+        method: "PATCH",
+        body: JSON.stringify({
+          plan: {
+            sellerId: form.get("sellerId"),
+            model: form.get("model"),
+            monthlyFee: parseFloat(form.get("monthlyFee") as string) || undefined,
+            perOrderFee: parseFloat(form.get("perOrderFee") as string) || undefined,
+            feePercent: parseFloat(form.get("feePercent") as string) || undefined,
+            notes: form.get("notes"),
+          },
+        }),
+      });
+      load();
+      toast({
+        title: "Seller plan saved",
+        description: "Custom pricing plan assigned.",
+        variant: "success",
+      });
+    } catch (err) {
+      toast({
+        title: "Save failed",
+        description: err instanceof Error ? err.message : "Could not save seller plan",
+        variant: "error",
+      });
+    }
   }
 
   if (!config) return <p>Loading...</p>;

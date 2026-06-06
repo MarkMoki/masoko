@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { apiFetch } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 type Method = {
   id: string;
@@ -18,6 +19,7 @@ type Method = {
 
 export default function MerchantPaymentsPage() {
   const [methods, setMethods] = useState<Method[]>([]);
+  const { toast } = useToast();
 
   async function load() {
     const data = await apiFetch<{ methods: Method[] }>("/api/payment-methods");
@@ -31,18 +33,31 @@ export default function MerchantPaymentsPage() {
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
-    await apiFetch("/api/payment-methods", {
-      method: "POST",
-      body: JSON.stringify({
-        type: form.get("type"),
-        accountName: form.get("accountName"),
-        accountNumber: form.get("accountNumber"),
-        instructions: form.get("instructions"),
-        isDefault: true,
-      }),
-    });
-    e.currentTarget.reset();
-    load();
+    try {
+      await apiFetch("/api/payment-methods", {
+        method: "POST",
+        body: JSON.stringify({
+          type: form.get("type"),
+          accountName: form.get("accountName"),
+          accountNumber: form.get("accountNumber"),
+          instructions: form.get("instructions"),
+          isDefault: true,
+        }),
+      });
+      e.currentTarget.reset();
+      load();
+      toast({
+        title: "Payment method added",
+        description: "Your payment method has been saved.",
+        variant: "success",
+      });
+    } catch (err) {
+      toast({
+        title: "Failed to save",
+        description: err instanceof Error ? err.message : "Could not save payment method",
+        variant: "error",
+      });
+    }
   }
 
   return (
