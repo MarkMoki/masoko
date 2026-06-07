@@ -38,7 +38,7 @@ export async function middleware(req: NextRequest) {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
     const today = new Date().toISOString().split("T")[0];
 
-    // Fire-and-forget analytics tracking
+    // Fire-and-forget analytics tracking (don't block navigation)
     fetch(`${req.nextUrl.origin}/api/analytics/track`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

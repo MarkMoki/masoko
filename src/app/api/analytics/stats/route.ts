@@ -20,11 +20,19 @@ export async function GET() {
   const weekAgo = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
   const monthAgo = new Date(Date.now() - 29 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
 
-  const [daily, weekly, monthly] = await Promise.all([
-    listAllDocuments<Analytics>(COLLECTIONS.analytics, [Query.greaterThanEqual("date", today)]),
-    listAllDocuments<Analytics>(COLLECTIONS.analytics, [Query.greaterThanEqual("date", weekAgo)]),
-    listAllDocuments<Analytics>(COLLECTIONS.analytics, [Query.greaterThanEqual("date", monthAgo)]),
-  ]);
+  let daily: Analytics[] = [];
+  let weekly: Analytics[] = [];
+  let monthly: Analytics[] = [];
+
+  try {
+    [daily, weekly, monthly] = await Promise.all([
+      listAllDocuments<Analytics>(COLLECTIONS.analytics, [Query.greaterThanEqual("date", today)]),
+      listAllDocuments<Analytics>(COLLECTIONS.analytics, [Query.greaterThanEqual("date", weekAgo)]),
+      listAllDocuments<Analytics>(COLLECTIONS.analytics, [Query.greaterThanEqual("date", monthAgo)]),
+    ]);
+  } catch {
+    // Analytics collection not set up yet - return empty stats
+  }
 
   const totalDaily = daily.reduce((sum, d) => sum + (d.visits || 0), 0);
   const totalWeekly = weekly.reduce((sum, d) => sum + (d.visits || 0), 0);

@@ -1,5 +1,4 @@
 import { createContext, useContext } from "react";
-import { ToastProvider as RadixToastProvider, Toast, ToastTitle, ToastDescription, ToastClose, ToastViewport } from "@radix-ui/react-toast";
 import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 import { useState, useRef, useEffect, ReactNode, useCallback } from "react";
@@ -25,7 +24,7 @@ type ToastContextType = {
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 const toastVariants = cva(
-  "pointer-events-auto relative flex w-full max-w-sm items-center justify-between gap-4 rounded-md border px-6 py-4 shadow-lg focus:outline-none focus:ring-2 focus:ring-ring",
+  "pointer-events-auto relative flex w-full max-w-sm items-start justify-between gap-4 rounded-md border px-6 py-4 shadow-lg focus:outline-none focus:ring-2 focus:ring-ring",
   {
     variants: {
       variant: {
@@ -66,7 +65,6 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
 
-  // Focus management for accessibility
   useEffect(() => {
     if (toasts.length > 0) {
       const lastToast = toastListRef.current?.lastElementChild;
@@ -78,37 +76,42 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   return (
     <ToastContext.Provider value={{ toasts, toast: showToast, dismiss }}>
-      <RadixToastProvider>
-        {children}
-        <div ref={toastListRef} aria-live="polite" aria-atomic="true">
-          {toasts.map(({ id, title, description, variant }) => (
-            <Toast
-              key={id}
-              open={true}
-              onOpenChange={() => dismiss(id)}
-              className={cn(toastVariants({ variant }), "data-[state=open]:animate-in data-[state=closed]:animate-out")}
-              tabIndex={-1}
+      {children}
+      <div
+        ref={toastListRef}
+        aria-live="polite"
+        aria-atomic="true"
+        className="fixed bottom-0 right-0 z-[100] flex flex-col gap-2 p-4 w-full max-w-sm sm:w-auto"
+      >
+        {toasts.map(({ id, title, description, variant }) => (
+          <div
+            key={id}
+            className={cn(toastVariants({ variant }))}
+            tabIndex={-1}
+            role="alert"
+          >
+            <div className="flex-1">
+              {title && (
+                <div className="text-sm font-semibold">
+                  {title}
+                </div>
+              )}
+              {description && (
+                <div className="text-sm opacity-90 mt-1">
+                  {description}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => dismiss(id)}
+              className="absolute right-2 top-2 rounded p-1 text-xs hover:bg-muted focus:ring-2 focus:ring-ring"
+              aria-label="Close toast"
             >
-              <div>
-                {title && (
-                  <ToastTitle className="text-sm font-semibold">
-                    {title}
-                  </ToastTitle>
-                )}
-                {description && (
-                  <ToastDescription className="text-sm opacity-90">
-                    {description}
-                  </ToastDescription>
-                )}
-              </div>
-              <ToastClose className="absolute right-2 top-2 rounded p-1 text-xs hover:bg-muted focus:ring-2 focus:ring-ring">
-                ×
-              </ToastClose>
-            </Toast>
-          ))}
-        </div>
-        <ToastViewport className="fixed bottom-0 right-0 z-[100] flex flex-col gap-2 p-4 w-full max-w-sm sm:w-auto" />
-      </RadixToastProvider>
+              ×
+            </button>
+          </div>
+        ))}
+      </div>
     </ToastContext.Provider>
   );
 }
