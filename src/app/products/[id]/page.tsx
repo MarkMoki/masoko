@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { ProductDetailView } from "@/components/products/product-detail-view";
+import { getProductWithReviews } from "@/lib/db/products";
 
 export default async function ProductDetailPage({
   params,
@@ -7,13 +8,9 @@ export default async function ProductDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  // const product = await prisma.product.findUnique({
-  //   where: { id },
-  //   include: { seller: true, store: true, category: true },
-  // });
-  const product: any = null; // Prisma removed
+  const product = await getProductWithReviews(id).catch(() => null);
 
   if (!product || !product.active) notFound();
 
-  return <ProductDetailView product={product} />;
+  return <ProductDetailView product={product as any} />;
 }

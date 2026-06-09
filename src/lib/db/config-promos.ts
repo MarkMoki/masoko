@@ -1,4 +1,4 @@
-import { createDocument, listDocuments, updateDocument, Query, getDocument, deleteDocument } from "@/lib/db/helpers";
+import { createDocument, listDocuments, updateDocument, Query, getDocument, deleteDocument, listAllDocuments } from "@/lib/db/helpers";
 import { COLLECTIONS } from "@/lib/appwrite/config";
 import type { SiteConfig, SellerPricingConfig, SellerPlan, MarketplacePromo, Product } from "@/lib/types";
 
@@ -137,5 +137,22 @@ export async function enrichPromos(promos: MarketplacePromo[]) {
 }
 
 export async function aggregateMostSoldProducts(limit: number): Promise<Product[]> {
-  return [];
+  const allOrders = await listAllDocuments(COLLECTIONS.sellerOrderItems, []);
+  const productQuantities: Record<string, number> = {};
+
+  for (const item of allOrders as any[]) {
+    const existing = productQuantities[item.productId] || 0;
+    productQuantities[item.productId] = existing + item.quantity;
+  }
+
+  const sortedProductIds = Object.entries(productQuantities)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([id]) => id);
+
+  const products = await listAllDocuments<Product>(COLLECTIONS.products, [
+    Query.equal("$id", sortedProductIds),
+  ]);
+
+  return products;
 }

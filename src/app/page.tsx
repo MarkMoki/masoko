@@ -8,6 +8,7 @@ import { FilterSidebar } from "@/components/products/filter-sidebar";
 import { EmptyProductsState } from "@/components/ui/empty-state";
 import { headers } from "next/headers";
 import { listDocuments, Query, COLLECTIONS } from "@/lib/db/helpers";
+import { enrichProducts } from "@/lib/db/products";
 import type { Product, Category } from "@/lib/types";
 
 export default async function MarketplacePage({
@@ -30,9 +31,28 @@ export default async function MarketplacePage({
   ]);
   const categories = categoriesResult.documents;
 
-  const [products, total, user, session, promos] = await Promise.all([
-    Promise.resolve([] as Product[]),
-    Promise.resolve(0 as number),
+  // Fetch products
+  const queries: string[] = [Query.orderDesc("$createdAt")];
+  if (q) queries.push(Query.search("name", q));
+  queries.push(Query.limit(limit));
+  queries.push(Query.offset(skip));
+  if (!q) queries.push(Query.equal("active", true));
+
+  const productsResult = await listDocuments<{
+    sellerId: string;
+    storeId?: string;
+    categoryId?: string;
+    name: string;
+    description?: string;
+    price: number;
+    stock: number;
+    imageUrl?: string;
+    active: boolean;
+  }>(COLLECTIONS.products, queries);
+  const products = await enrichProducts(productsResult.documents);
+  const total = productsResult.total;
+
+  const [user, session, promos] = await Promise.all([
     getCurrentUser(),
     getSession(),
     getMarketplacePromos(),

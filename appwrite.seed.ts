@@ -16,10 +16,10 @@ import {
 } from "./src/lib/db/helpers";
 import { COLLECTIONS } from "./src/lib/appwrite/config";
 import { Role, PricingModel, PromoType } from "./src/lib/types";
-import bcrypt from "bcryptjs";
+import * as bcrypt from "bcryptjs";
 
 const client = new Client()
-  .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "https://tor.cloud.appwrite.io/v1")
+  .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || "https://fra.cloud.appwrite.io/v1")
   .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID!)
   .setKey(process.env.APPWRITE_API_KEY!);
 
@@ -251,6 +251,55 @@ async function ensureCollectionsExist() {
         { key: "idx_type_title", type: "key", attributes: ["type", "title"] },
       ],
     },
+    {
+      id: COLLECTIONS.wishlists,
+      name: "Wishlists",
+      attributes: [
+        { name: "userId", type: "string", size: 255, required: true },
+      ],
+      indexes: [
+        { key: "idx_userId", type: "key", attributes: ["userId"] },
+      ],
+    },
+    {
+      id: COLLECTIONS.wishlistItems,
+      name: "Wishlist Items",
+      attributes: [
+        { name: "userId", type: "string", size: 255, required: true },
+        { name: "productId", type: "string", size: 255, required: true },
+      ],
+      indexes: [
+        { key: "idx_userId", type: "key", attributes: ["userId"] },
+        { key: "idx_productId", type: "key", attributes: ["productId"] },
+      ],
+    },
+    {
+      id: COLLECTIONS.reviews,
+      name: "Reviews",
+      attributes: [
+        { name: "productId", type: "string", size: 255, required: true },
+        { name: "userId", type: "string", size: 255, required: true },
+        { name: "rating", type: "integer", required: true },
+        { name: "comment", type: "string", size: 1000, required: false },
+      ],
+      indexes: [
+        { key: "idx_productId", type: "key", attributes: ["productId"] },
+      ],
+    },
+    {
+      id: COLLECTIONS.analytics,
+      name: "Analytics",
+      attributes: [
+        { name: "date", type: "string", size: 50, required: true },
+        { name: "page", type: "string", size: 255, required: true },
+        { name: "visits", type: "integer", required: true },
+        { name: "uniqueVisitors", type: "integer", required: true },
+        { name: "visitorIps", type: "string", size: 2000, required: false },
+      ],
+      indexes: [
+        { key: "idx_date_page", type: "key", attributes: ["date", "page"] },
+      ],
+    },
   ];
 
   for (const col of targetCollections) {
@@ -367,89 +416,6 @@ async function seedAppwrite() {
 
     const allUsers = await listAllDocuments<{ id: string; role: string }>(COLLECTIONS.users, []);
     const sellerUsers = allUsers.filter((u) => u.role === Role.SELLER);
-    const customerUsers = allUsers.filter((u) => u.role === Role.CUSTOMER);
-
-    const extraSellerNames = [
-      { name: "Diana Moraa", email: "diana@masoko.local", role: Role.SELLER },
-      { name: "Elias Okoth", email: "elias@masoko.local", role: Role.SELLER },
-      { name: "Fatuma Hassan", email: "fatuma@masoko.local", role: Role.SELLER },
-      { name: "George Wekesa", email: "george@masoko.local", role: Role.SELLER },
-      { name: "Hannah Njeri", email: "hannah@masoko.local", role: Role.SELLER },
-    ];
-    let extraUserIdx = 0;
-    for (const def of extraSellerNames) {
-      if (sellerUsers.length >= 9) break;
-      const existing = await getUserByEmail(def.email);
-      if (!existing) {
-        const u = await createUser({
-          name: def.name,
-          email: def.email,
-          phone: `+25470000${1000 + extraUserIdx}`,
-          passwordHash,
-          role: def.role,
-        });
-        sellerUsers.push(u);
-        console.log(`  [CREATE] ${def.role} ${def.name}`);
-      }
-      extraUserIdx += 1;
-    }
-
-    const extraCustomerNames = [
-      { name: "Irene Mwangi", email: "irene@masoko.local", role: Role.CUSTOMER },
-      { name: "James Kiptoo", email: "james@masoko.local", role: Role.CUSTOMER },
-      { name: "Khadija Omar", email: "khadija@masoko.local", role: Role.CUSTOMER },
-      { name: "Lucy Chebet", email: "lucy@masoko.local", role: Role.CUSTOMER },
-      { name: "Michael Adhiambo", email: "michael@masoko.local", role: Role.CUSTOMER },
-    ];
-    extraUserIdx = 0;
-    for (const def of extraCustomerNames) {
-      if (customerUsers.length >= 9) break;
-      const existing = await getUserByEmail(def.email);
-      if (!existing) {
-        const u = await createUser({
-          name: def.name,
-          email: def.email,
-          phone: `+25470001${1000 + extraUserIdx}`,
-          passwordHash,
-          role: def.role,
-        });
-        customerUsers.push(u);
-        console.log(`  [CREATE] ${def.role} ${def.name}`);
-      }
-      extraUserIdx += 1;
-    }
-    }
-
-    const extraUserNames = [
-      { name: "Diana Moraa", email: "diana@masoko.local", role: Role.SELLER },
-      { name: "Elias Okoth", email: "elias@masoko.local", role: Role.CUSTOMER },
-      { name: "Fatuma Hassan", email: "fatuma@masoko.local", role: Role.SELLER },
-      { name: "George Wekesa", email: "george@masoko.local", role: Role.CUSTOMER },
-      { name: "Hannah Njeri", email: "hannah@masoko.local", role: Role.SELLER },
-    ];
-    let extraUserCount = 1;
-    for (const def of extraUserNames) {
-      if ((await listAllDocuments<{ email: string }>(COLLECTIONS.users, [])).length >= 9) break;
-      const existing = await getUserByEmail(def.email);
-      if (!existing) {
-        const u = await createUser({
-          name: def.name,
-          email: def.email,
-          phone: `+25470000${1000 + extraUserCount}`,
-          passwordHash,
-          role: def.role,
-        });
-        users[`extra${extraUserCount}`] = u;
-        console.log(`  [CREATE] ${def.role} ${def.name}`);
-      } else {
-        users[`extra${extraUserCount}`] = existing;
-      }
-      extraUserCount += 1;
-    }
-
-    const allUsers = await listAllDocuments<{ id: string; role: string }>(COLLECTIONS.users, []);
-    const sellerUsers = allUsers.filter((u) => u.role === Role.SELLER);
-    const customerUsers = allUsers.filter((u) => u.role === Role.CUSTOMER);
 
     // --- Stores ---
     console.log("\n--- Stores ---");
@@ -481,65 +447,11 @@ async function seedAppwrite() {
         address: "Mombasa CBD, Kenya",
         imageUrl: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&q=80",
       },
-      {
-        sellerId: sellerUsers[3]?.id,
-        name: "Kisumu Book Nook",
-        description: "New and used books, stationery, and educational supplies.",
-        latitude: -0.0917,
-        longitude: 34.7676,
-        address: "Kisumu CBD, Kenya",
-        imageUrl: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=800&q=80",
-      },
-      {
-        sellerId: sellerUsers[4]?.id,
-        name: "Nakuru Beauty Lounge",
-        description: "Skincare, makeup, and wellness products for everyone.",
-        latitude: -0.3031,
-        longitude: 36.0800,
-        address: "Nakuru Town, Kenya",
-        imageUrl: "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=800&q=80",
-      },
-      {
-        sellerId: sellerUsers[5]?.id,
-        name: "Eldoret Home Essentials",
-        description: "Quality home decor, kitchenware, and bedding.",
-        latitude: 0.5143,
-        longitude: 35.2698,
-        address: "Eldoret Town, Kenya",
-        imageUrl: "https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=800&q=80",
-      },
-      {
-        sellerId: sellerUsers[6]?.id,
-        name: "Thika Gaming Zone",
-        description: "Video games, consoles, controllers, and gaming accessories.",
-        latitude: -1.0333,
-        longitude: 37.0693,
-        address: "Thika, Kenya",
-        imageUrl: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&q=80",
-      },
-      {
-        sellerId: sellerUsers[7]?.id,
-        name: "Malindi Beachwear",
-        description: "Swimwear, flip-flops, and beach accessories for summer getaways.",
-        latitude: -3.2173,
-        longitude: 40.1169,
-        address: "Malindi, Kenya",
-        imageUrl: "https://images.unsplash.com/photo-1500917293891-ef795e70e1f6?w=800&q=80",
-      },
-      {
-        sellerId: sellerUsers[8]?.id,
-        name: "Kitengela Pet Store",
-        description: "Pet food, toys, grooming kits, and accessories for dogs and cats.",
-        latitude: -1.4167,
-        longitude: 36.8667,
-        address: "Kitengela, Kenya",
-        imageUrl: "https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?w=800&q=80",
-      },
     ];
 
     const allStores: any[] = [];
     for (const def of storeDefs) {
-      if ((await listAllDocuments<{ sellerId: string }>(COLLECTIONS.stores, [])).length >= 9) break;
+      if ((await listAllDocuments<{ sellerId: string }>(COLLECTIONS.stores, [])).length >= 3) break;
       const store = await createStore({
         sellerId: def.sellerId,
         name: def.name,
@@ -591,7 +503,7 @@ async function seedAppwrite() {
       // Groceries - Store A
       {
         sellerId: users.sellerA.id,
-        storeId: stores.storeA.id,
+        storeId: allStores[0]?.id ?? users.sellerA.id,
         categoryId: categories["Groceries"],
         name: "Organic Tomatoes 1kg",
         description: "Fresh organic tomatoes from Kiambu farms. Perfect for salads and cooking.",
@@ -602,10 +514,10 @@ async function seedAppwrite() {
       },
       {
         sellerId: users.sellerA.id,
-        storeId: stores.storeA.id,
+        storeId: allStores[0]?.id ?? users.sellerA.id,
         categoryId: categories["Groceries"],
         name: "Maize Flour 2kg (Premium)",
-        description: " premium maize flour, sifted and packed under hygienic conditions.",
+        description: "Premium maize flour, sifted and packed under hygienic conditions.",
         price: 220,
         stock: 45,
         active: true,
@@ -613,7 +525,7 @@ async function seedAppwrite() {
       },
       {
         sellerId: users.sellerA.id,
-        storeId: stores.storeA.id,
+        storeId: allStores[0]?.id ?? users.sellerA.id,
         categoryId: categories["Groceries"],
         name: "Fresh Avocados (6 pcs)",
         description: "Hass avocados, ripe and ready to eat. Rich in healthy fats.",
@@ -624,7 +536,7 @@ async function seedAppwrite() {
       },
       {
         sellerId: users.sellerA.id,
-        storeId: stores.storeA.id,
+        storeId: allStores[0]?.id ?? users.sellerA.id,
         categoryId: categories["Groceries"],
         name: "Ugali Flour 1kg",
         description: "Finely milled ugali flour, perfect for that authentic Kenyan taste.",
@@ -635,7 +547,7 @@ async function seedAppwrite() {
       },
       {
         sellerId: users.sellerA.id,
-        storeId: stores.storeA.id,
+        storeId: allStores[0]?.id ?? users.sellerA.id,
         categoryId: categories["Groceries"],
         name: "Kale (Sukuma Wiki) Bunch",
         description: "Fresh green kale, washed and ready for cooking.",
@@ -647,7 +559,7 @@ async function seedAppwrite() {
       // Electronics - Store B
       {
         sellerId: users.sellerB.id,
-        storeId: stores.storeB.id,
+        storeId: allStores[1]?.id ?? users.sellerB.id,
         categoryId: categories["Electronics"],
         name: "USB-C Fast Charging Cable 2m",
         description: "Braided nylon USB-C to USB-C cable. Supports 100W PD fast charging.",
@@ -658,7 +570,7 @@ async function seedAppwrite() {
       },
       {
         sellerId: users.sellerB.id,
-        storeId: stores.storeB.id,
+        storeId: allStores[1]?.id ?? users.sellerB.id,
         categoryId: categories["Electronics"],
         name: "Wireless Bluetooth Earbuds",
         description: "True wireless earbuds with 30h battery, active noise cancellation, and IPX5 water resistance.",
@@ -669,7 +581,7 @@ async function seedAppwrite() {
       },
       {
         sellerId: users.sellerB.id,
-        storeId: stores.storeB.id,
+        storeId: allStores[1]?.id ?? users.sellerB.id,
         categoryId: categories["Electronics"],
         name: "Power Bank 20000mAh",
         description: "High-capacity power bank with dual USB output and LED display.",
@@ -680,7 +592,7 @@ async function seedAppwrite() {
       },
       {
         sellerId: users.sellerB.id,
-        storeId: stores.storeB.id,
+        storeId: allStores[1]?.id ?? users.sellerB.id,
         categoryId: categories["Electronics"],
         name: "Laptop Stand Adjustable",
         description: "Ergonomic aluminum laptop stand compatible with all laptops up to 17\".",
@@ -691,7 +603,7 @@ async function seedAppwrite() {
       },
       {
         sellerId: users.sellerB.id,
-        storeId: stores.storeB.id,
+        storeId: allStores[1]?.id ?? users.sellerB.id,
         categoryId: categories["Electronics"],
         name: "Wireless Mouse Silent",
         description: "2.4GHz wireless mouse with silent clicks and ergonomic design.",
@@ -703,7 +615,7 @@ async function seedAppwrite() {
       // Fashion - Store C
       {
         sellerId: users.sellerC.id,
-        storeId: stores.storeC.id,
+        storeId: allStores[2]?.id ?? users.sellerC.id,
         categoryId: categories["Fashion"],
         name: "Kanga Fabric - Premium Print",
         description: "High-quality cotton kanga with vibrant traditional prints. 1.8m x 1.1m.",
@@ -714,7 +626,7 @@ async function seedAppwrite() {
       },
       {
         sellerId: users.sellerC.id,
-        storeId: stores.storeC.id,
+        storeId: allStores[2]?.id ?? users.sellerC.id,
         categoryId: categories["Fashion"],
         name: "Men's Leather Sandals",
         description: "Handcrafted genuine leather sandals. Comfortable, durable, and stylish.",
@@ -725,7 +637,7 @@ async function seedAppwrite() {
       },
       {
         sellerId: users.sellerC.id,
-        storeId: stores.storeC.id,
+        storeId: allStores[2]?.id ?? users.sellerC.id,
         categoryId: categories["Fashion"],
         name: "Women's Ankara Dress",
         description: "Beautiful Ankara print dress. Custom-tailored, sizes S - XXL available.",
@@ -736,7 +648,7 @@ async function seedAppwrite() {
       },
       {
         sellerId: users.sellerC.id,
-        storeId: stores.storeC.id,
+        storeId: allStores[2]?.id ?? users.sellerC.id,
         categoryId: categories["Fashion"],
         name: "Unisex Canvas Sneakers",
         description: "Lightweight white canvas sneakers. Perfect for everyday wear.",
@@ -747,7 +659,7 @@ async function seedAppwrite() {
       },
       {
         sellerId: users.sellerC.id,
-        storeId: stores.storeC.id,
+        storeId: allStores[2]?.id ?? users.sellerC.id,
         categoryId: categories["Fashion"],
         name: "Leather Belt - Handmade",
         description: "Hand-stitched genuine leather belt. Fits waist sizes 28\" - 42\".",
@@ -949,8 +861,8 @@ async function seedAppwrite() {
 
     // --- Sample Seller Order Items (most sold data) ---
     console.log("\n--- Sample Seller Order Items (for Most Sold aggregation) ---");
-    const products = await listAllDocuments<{ id: string; name: string }>(COLLECTIONS.products, []);
-    const sampleProducts = products.filter((p) => p.name.includes("Cable") || p.name.includes("Tomatoes") || p.name.includes("Earbuds") || p.name.includes("Maize"));
+    const allProducts = await listAllDocuments<{ id: string; name: string; price: number; sellerId: string }>(COLLECTIONS.products, []);
+    const sampleProducts = allProducts.filter((p) => p.name.includes("Cable") || p.name.includes("Tomatoes") || p.name.includes("Earbuds") || p.name.includes("Maize"));
 
     // Create a past completed master order and seller orders with items
     let masterOrder: any = null;
@@ -1003,6 +915,57 @@ async function seedAppwrite() {
       }
     }
 
+    // --- Reviews ---
+    console.log("\n--- Reviews ---");
+    const createdProducts = await listAllDocuments<{ id: string; name: string; sellerId: string }>(COLLECTIONS.products, []);
+    const reviewDefs = [
+      { productId: createdProducts[0]?.id, userId: users.customer.id, rating: 5, comment: "Excellent quality tomatoes! Fresh and delicious." },
+      { productId: createdProducts[1]?.id, userId: users.customer.id, rating: 5, comment: "Best maize flour in the market. Highly recommended!" },
+      { productId: createdProducts[5]?.id, userId: users.customer.id, rating: 5, comment: "Great charging cable, works perfectly." },
+      { productId: createdProducts[6]?.id, userId: users.customer.id, rating: 4, comment: "Good earbuds, battery lasts long." },
+      { productId: createdProducts[10]?.id, userId: users.customer.id, rating: 5, comment: "Beautiful kanga fabric, vibrant colors!" },
+    ];
+
+    for (const def of reviewDefs) {
+      if (!def.productId) continue;
+      const existing = await listAllDocuments<{ productId: string; userId: string }>(COLLECTIONS.reviews, [
+        Query.equal("productId", def.productId),
+        Query.equal("userId", def.userId),
+      ]);
+      if (existing.length === 0) {
+        await createDocument(COLLECTIONS.reviews, {
+          productId: def.productId,
+          userId: def.userId,
+          rating: def.rating,
+          comment: def.comment,
+        });
+        console.log(`  [CREATE] Review for product ${def.productId}`);
+      }
+    }
+
+    // --- Wishlist Items ---
+    console.log("\n--- Wishlist Items ---");
+    const wishlistDefs = [
+      { userId: users.customer.id, productId: createdProducts[0]?.id },
+      { userId: users.customer.id, productId: createdProducts[5]?.id },
+      { userId: users.customer.id, productId: createdProducts[10]?.id },
+    ];
+
+    for (const def of wishlistDefs) {
+      if (!def.productId) continue;
+      const existing = await listAllDocuments<{ userId: string; productId: string }>(COLLECTIONS.wishlistItems, [
+        Query.equal("userId", def.userId),
+        Query.equal("productId", def.productId),
+      ]);
+      if (existing.length === 0) {
+        await createDocument(COLLECTIONS.wishlistItems, {
+          userId: def.userId,
+          productId: def.productId,
+        });
+        console.log(`  [CREATE] Wishlist item for user ${def.userId}`);
+      }
+    }
+
     console.log("\n=== Seeding completed successfully! ===");
     console.log("  Admin:    admin@masoko.local    / password123");
     console.log("  Seller A: amina@masoko.local  / password123  (Nairobi Fresh Mart)");
@@ -1011,9 +974,9 @@ async function seedAppwrite() {
     console.log("  Customer: customer@masoko.local / password123");
     console.log("\nCollections seeded:");
     console.log("  users, stores, categories, products, carts, cartItems");
-    console.log("  masterOrders, sellerOrders, sellerOrderItems");
-    console.log("  paymentMethods, payments, notifications");
-    console.log("  siteConfig, sellerPricingConfig, sellerPlans, marketplacePromos");
+    console.log("  masterOrders, sellerOrders, sellerOrderItems, payments");
+    console.log("  paymentMethods, notifications, reviews, wishlists, wishlistItems");
+    console.log("  siteConfig, sellerPricingConfig, sellerPlans, marketplacePromos, analytics");
     process.exit(0);
   } catch (error) {
     console.error("\nError seeding Appwrite:", error);

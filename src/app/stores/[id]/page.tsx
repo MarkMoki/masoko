@@ -2,6 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ProductCard } from "@/components/products/product-card";
 import { getCurrentUser, getSession } from "@/lib/auth";
+import { getStoreWithProducts } from "@/lib/db/users-stores";
+import { enrichProducts } from "@/lib/db/products";
+import type { Product } from "@/lib/types";
 
 export default async function StoreDetailPage({
   params,
@@ -9,16 +12,12 @@ export default async function StoreDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  // const store = await prisma.store.findUnique({
-  //   where: { id },
-  //   include: {
-  //     seller: { select: { id: true, name: true } },
-  //     products: { where: { active: true } },
-  //   },
-  // });
-  const store: any = null; // Prisma removed
+  const storeData = await getStoreWithProducts(id).catch(() => null);
 
-  if (!store) notFound();
+  if (!storeData) notFound();
+
+  const store = storeData;
+  const enrichedProducts = await enrichProducts(storeData.products as any[]);
 
   const [user, session] = await Promise.all([getCurrentUser(), getSession()]);
 
@@ -37,10 +36,10 @@ export default async function StoreDetailPage({
 
       <h2 className="mb-4 mt-8 text-xl font-semibold">Products</h2>
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        {store.products.map((product: any) => (
+        {enrichedProducts.map((product: Product) => (
           <ProductCard
             key={product.id}
-            product={{ ...product, seller: store.seller, store }}
+            product={product}
             sessionRole={session?.role}
             currentUserId={user?.id}
           />

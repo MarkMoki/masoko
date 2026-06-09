@@ -158,3 +158,50 @@ export async function getProductsByIds(ids: string[]) {
   const idSet = new Set(ids);
   return products.filter((p) => idSet.has(p.id));
 }
+
+export async function getProductWithReviews(id: string) {
+  const product = await getProductById(id, false) as ProductDoc & { id: string };
+  const { documents: reviews } = await listDocuments(COLLECTIONS.reviews, [
+    Query.equal("productId", id),
+    Query.limit(100),
+  ]);
+
+  const averageRating = reviews.length > 0
+    ? reviews.reduce((sum: number, r: any) => sum + (r.rating || 0), 0) / reviews.length
+    : 0;
+
+  const [seller, store, category] = await Promise.all([
+    getUserById(product.sellerId).catch(() => null),
+    product.storeId
+      ? getDocument<{ id: string; name: string }>(
+          COLLECTIONS.stores,
+          product.storeId
+        ).catch(() => null)
+      : null,
+    product.categoryId
+      ? getDocument<Category>(COLLECTIONS.categories, product.categoryId).catch(
+          () => null
+        )
+      : null,
+  ]);
+
+  const reviewData = await Promise.all(
+    reviews.map(async (r: any) => {
+      const user = await getUserById(r.userId).catch(() => null);
+      return {
+        ...r,
+        user: user ? { name: user.name } : undefined,
+      };
+    })
+  );
+
+  return {
+    ...product,
+    seller: seller ? { id: seller.id, name: seller.name } : undefined,
+    store: store ? { id: store.id, name: store.name } : null,
+    category,
+    averageRating,
+    reviewCount: reviews.length,
+    reviews: reviewData,
+  };
+}
