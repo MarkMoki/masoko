@@ -5,22 +5,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/utils";
 import { SellerOrderActions } from "@/components/merchant/seller-order-actions";
+import { listSellerOrders, enrichSellerOrder } from "@/lib/db/orders";
 import { Button } from "@/components/ui/button";
 
 export default async function MerchantOrdersPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  // const orders = await prisma.sellerOrder.findMany({
-  //   where: { sellerId: user.id },
-  //   include: {
-  //     items: { include: { product: true } },
-  //     masterOrder: { include: { customer: true } },
-  //     payments: { orderBy: { createdAt: "desc" }, take: 1 },
-  //   },
-  //   orderBy: { createdAt: "desc" },
-  // });
-  const orders: any[] = []; // Prisma removed
+  const ordersResult = await listSellerOrders({ sellerId: user.id, limit: 100 });
+  const orders = await Promise.all(
+    ordersResult.documents.map(async (o) => {
+      const enriched = await enrichSellerOrder(o, { includeItems: true, includeMaster: true });
+      return enriched;
+    })
+  );
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -47,14 +45,15 @@ export default async function MerchantOrdersPage() {
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {order.masterOrder.customer.name} ·{" "}
+                  {order.masterOrder?.customer?.name} ·{" "}
                   {new Date(order.createdAt).toLocaleString()}
                 </p>
               </CardHeader>
               <CardContent>
-                <ul className="mb-3 space-y-1 text-sm">\n                  {order.items.map((item: any) => (
+                <ul className="mb-3 space-y-1 text-sm">
+                  {(order.items ?? []).map((item) => (
                     <li key={item.id}>
-                      {item.product.name} × {item.quantity} —{" "}
+                      {item.product?.name ?? "Product"} × {item.quantity} —{" "}
                       {formatCurrency(item.unitPrice * item.quantity)}
                     </li>
                   ))}
@@ -62,10 +61,10 @@ export default async function MerchantOrdersPage() {
                 <p className="font-semibold">
                   Subtotal: {formatCurrency(order.subtotal)}
                 </p>
-                {order.payments[0] && (
+                {(order.payments ?? [])[0] && (
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Payment: {order.payments[0].transactionCode} (
-                    {order.payments[0].status})
+                    Payment: {(order.payments ?? [])[0].transactionCode} (
+                    {(order.payments ?? [])[0].status})
                   </p>
                 )}
                 <SellerOrderActions

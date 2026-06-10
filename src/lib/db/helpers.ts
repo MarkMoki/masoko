@@ -143,3 +143,32 @@ export async function deleteMany(
   );
   return docs.length;
 }
+
+export async function bulkUpdateDocuments(
+  collectionId: string,
+  ids: string[],
+  data: Record<string, unknown>
+) {
+  const results = await Promise.all(
+    ids.map((id) => updateDocument(collectionId, id, data))
+  );
+  return results.length;
+}
+
+export async function bulkDeleteDocuments(
+  collectionId: string,
+  ids: string[]
+) {
+  await Promise.all(ids.map((id) => deleteDocument(collectionId, id)));
+  return ids.length;
+}
+
+export async function bulkCreateDocuments<T extends Record<string, unknown>>(
+  collectionId: string,
+  items: Array<Record<string, unknown>>
+) {
+  const results = await Promise.all(
+    items.map((data) => createDocument<T>(collectionId, data))
+  );
+  return results;
+}

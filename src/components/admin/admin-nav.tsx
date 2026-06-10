@@ -17,7 +17,7 @@ export function AdminNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="mb-8 flex flex-wrap gap-2 border-b pb-4" aria-label="Admin navigation">
+    <nav className="mb-8 flex flex-wrap gap-2 border-b pb-4" aria-label="Admin navigation" data-tour="admin-sellers">
       {links.map((link) => (
         <Link
           key={link.href}

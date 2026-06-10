@@ -90,7 +90,7 @@ export default function MerchantStorePage() {
   if (loading) return <p className="p-8">Loading...</p>;
 
   return (
-    <div className="container mx-auto max-w-lg px-4 py-8">
+    <div className="container mx-auto max-w-lg px-4 py-8" data-tour="merchant-store">
       <Card>
         <CardHeader>
           <CardTitle>{store ? "Edit store" : "Create store"}</CardTitle>

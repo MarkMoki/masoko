@@ -21,7 +21,7 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 142 76% 36%;
-    --radius: 0.5rem;
+    --radius: 0.75rem;
   }
 }
 
@@ -29,15 +29,96 @@
   * {
     @apply border-border;
   }
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+  }
   body {
     @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+  ::selection {
+    @apply bg-primary/20 text-primary;
+  }
+  *:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 rounded-md;
+  }
+  a, button {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 }
 
 @layer utilities {
   @media (max-width: 639px) {
     .container {
+      @apply px-3.5;
+    }
+    ::-webkit-scrollbar {
+      width: 3px;
+      height: 3px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: hsl(var(--muted-foreground) / 0.3);
+      border-radius: 9999px;
+    }
+    .safe-bottom {
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    .safe-top {
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+    .mobile-card {
+      @apply rounded-xl border bg-card p-3.5 shadow-sm;
+    }
+    .mobile-card-content {
+      @apply px-3.5 pb-3.5 pt-0;
+    }
+    .mobile-card-header {
+      @apply flex flex-col space-y-1.5 p-3.5;
+    }
+    .mobile-input {
+      @apply h-11 text-base rounded-xl;
+    }
+    .mobile-btn-sm {
+      @apply h-10 text-sm px-3.5 rounded-lg;
+    }
+    .mobile-btn {
+      @apply h-11 text-base px-6 rounded-lg;
+    }
+    .mobile-btn-lg {
+      @apply h-12 text-base px-8 rounded-xl;
+    }
+    .mobile-text-xs {
+      @apply text-[11px];
+    }
+    .mobile-text-sm {
+      @apply text-xs;
+    }
+    .mobile-shadow {
+      @apply shadow-md;
+    }
+    .mobile-section-gap {
+      @apply gap-3;
+    }
+    .mobile-mb-section {
+      @apply mb-5;
+    }
+  }
+  @media (min-width: 375px) and (max-width: 413px) {
+    .container {
       @apply px-4;
+    }
+  }
+  @media (min-width: 414px) and (max-width: 767px) {
+    .container {
+      @apply px-5;
     }
   }
 }

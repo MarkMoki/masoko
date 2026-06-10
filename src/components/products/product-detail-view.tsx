@@ -15,7 +15,6 @@ import {
   ChevronLeft,
   MapPin,
   Minus,
-  Package,
   Plus,
   ShoppingCart,
   Store,
@@ -145,18 +144,20 @@ export function ProductDetailView({ product }: { product: ProductDetail }) {
   const inStock = product.stock > 0;
 
   return (
-    <div className="container mx-auto max-w-6xl px-4 py-6">
+    <div className="mx-auto max-w-5xl px-3.5 md:px-4 lg:px-6 py-4 md:py-6 pb-24 md:pb-8">
       <Link
         href="/"
-        className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary"
+        className="mb-4 md:mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors min-h-[40px]"
       >
-        <ChevronLeft className="h-4 w-4" />
-        Back to marketplace
+        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="m15 18-6-6 6-6" />
+        </svg>
+        Back
       </Link>
 
-      <div className="grid gap-8 lg:grid-cols-5 lg:gap-12">
+      <div className="grid gap-5 md:gap-8 lg:grid-cols-5 lg:gap-10">
         <div className="lg:col-span-3">
-          <div className="relative aspect-square overflow-hidden rounded-2xl border bg-muted shadow-sm">
+          <div className="relative aspect-[4/3] md:aspect-square overflow-hidden rounded-2xl bg-muted shadow-sm">
             {product.imageUrl ? (
               <Image
                 src={product.imageUrl}
@@ -168,19 +169,23 @@ export function ProductDetailView({ product }: { product: ProductDetail }) {
               />
             ) : (
               <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground">
-                <Package className="h-16 w-16 opacity-40" />
-                <span>No image available</span>
+                <svg className="h-12 w-12 md:h-16 md:w-16 opacity-40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                  <circle cx="9" cy="9" r="2" />
+                  <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                </svg>
+                <span className="text-xs md:text-sm">No image available</span>
               </div>
             )}
           </div>
         </div>
 
         <div className="lg:col-span-2">
-          <div className="sticky top-20 space-y-5">
+          <div className="lg:sticky lg:top-20 space-y-4 md:space-y-5">
             {product.category && (
-              <Badge variant="secondary">{product.category.name}</Badge>
+              <Badge variant="secondary" className="text-xs">{product.category.name}</Badge>
             )}
-            <h1 className="text-3xl font-bold tracking-tight">{product.name}</h1>
+            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold tracking-tight">{product.name}</h1>
 
             {product.store && (
               <Link
@@ -192,11 +197,9 @@ export function ProductDetailView({ product }: { product: ProductDetail }) {
               </Link>
             )}
 
-            <p className="text-3xl font-bold text-primary">
-              {formatCurrency(product.price)}
-            </p>
+            <p className="text-2xl md:text-3xl font-bold text-primary">{formatCurrency(product.price)}</p>
 
-            <div className="flex flex-wrap gap-2 text-sm">
+            <div className="flex flex-wrap gap-2 text-xs md:text-sm">
               <Badge variant={inStock ? "success" : "destructive"}>
                 {inStock ? `${product.stock} in stock` : "Out of stock"}
               </Badge>
@@ -206,64 +209,64 @@ export function ProductDetailView({ product }: { product: ProductDetail }) {
             {averageRating > 0 && (
               <div className="flex items-center gap-2">
                 <StarRating rating={averageRating} readOnly />
-                <span className="text-sm text-muted-foreground">
-                  ({reviewCount} reviews)
+                <span className="text-xs md:text-sm text-muted-foreground">
+                  ({reviewCount} {reviewCount === 1 ? "review" : "reviews"})
                 </span>
               </div>
             )}
 
             {product.description && (
-              <div className="rounded-lg border bg-muted/30 p-4">
-                <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              <div className="rounded-xl border bg-muted/30 p-3 md:p-4">
+                <h2 className="mb-2 text-xs md:text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                   Description
                 </h2>
-                <p className="whitespace-pre-wrap leading-relaxed text-foreground/90">
-                  {product.description}
-                </p>
+                <p className="whitespace-pre-wrap leading-relaxed text-sm md:text-base text-foreground/90">{product.description}</p>
               </div>
             )}
 
             {inStock && (
-              <div className="rounded-xl border bg-card p-4 shadow-sm">
-                <p className="mb-3 text-sm font-medium">Quantity</p>
-                <div className="mb-4 flex items-center gap-3">
+              <div className="rounded-xl border bg-card p-3 md:p-4 shadow-sm">
+                <p className="mb-2.5 text-xs md:text-sm font-medium">Quantity</p>
+                <div className="mb-3 flex items-center gap-2.5 md:gap-3">
                   <Button
                     type="button"
                     variant="outline"
                     size="icon"
                     onClick={() => setQty((q) => Math.max(1, q - 1))}
                     disabled={qty <= 1}
+                    className="h-9 w-9 min-[375px]:h-10 min-[375px]:w-10"
                   >
                     <Minus className="h-4 w-4" />
                   </Button>
-                  <span className="w-8 text-center font-semibold">{qty}</span>
+                  <span className="w-8 text-center font-semibold text-sm md:text-base">{qty}</span>
                   <Button
                     type="button"
                     variant="outline"
                     size="icon"
                     onClick={() => setQty((q) => Math.min(product.stock, q + 1))}
                     disabled={qty >= product.stock}
+                    className="h-9 w-9 min-[375px]:h-10 min-[375px]:w-10"
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>
                 <Button
-                  className="w-full gap-2"
+                  className="w-full gap-2 h-12 mobile-btn-lg"
                   size="lg"
                   onClick={addToCart}
                   loading={loading}
                 >
                   <ShoppingCart className="h-5 w-5" />
-                  Add to cart
+                  Add to cart — {formatCurrency(product.price * qty)}
                 </Button>
-                <p className="mt-2 text-center text-xs text-muted-foreground">
+                <p className="mt-2 text-center text-[11px] md:text-xs text-muted-foreground">
                   Subtotal: {formatCurrency(product.price * qty)}
                 </p>
               </div>
             )}
 
             {product.store && (
-              <Button asChild variant="outline" className="w-full gap-2">
+              <Button asChild variant="outline" className="w-full gap-2 h-11 mobile-btn">
                 <Link href="/map">
                   <MapPin className="h-4 w-4" />
                   Find store on map
@@ -271,7 +274,7 @@ export function ProductDetailView({ product }: { product: ProductDetail }) {
               </Button>
             )}
 
-            <div className="border-t pt-6">
+            <div className="border-t pt-5 md:pt-6">
               <h2 className="mb-4 flex items-center gap-2 font-semibold">
                 <MessageSquare className="h-5 w-5" />
                 Reviews
@@ -285,8 +288,8 @@ export function ProductDetailView({ product }: { product: ProductDetail }) {
                 <textarea
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
-                  placeholder="Write a review..."
-                  className="w-full rounded-md border p-2 text-sm"
+                  placeholder="Write your review..."
+                  className="w-full rounded-xl border bg-background px-4 py-3 text-sm md:text-base placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none"
                   rows={3}
                 />
                 <Button
@@ -294,6 +297,7 @@ export function ProductDetailView({ product }: { product: ProductDetail }) {
                   onClick={submitReview}
                   loading={submittingReview}
                   disabled={!newComment.trim()}
+                  className="h-10 mobile-btn-sm"
                 >
                   Submit Review
                 </Button>

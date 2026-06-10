@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, ShoppingCart, Heart, User, Bell } from "lucide-react";
@@ -19,44 +20,55 @@ export function MobileBottomNav() {
   const pathname = usePathname();
   const session = useSession();
 
-  // Hide on admin/merchant pages
   if (pathname.startsWith("/admin") || pathname.startsWith("/merchant")) {
     return null;
   }
 
+  const activeHref = navItems.find((item) => {
+    if (item.href === "/" || item.href === "/cart" || item.href === "/wishlist") {
+      return pathname === item.href || pathname.startsWith(item.href + "/");
+    }
+    return pathname.startsWith(item.href);
+  })?.href;
+
+  function isActive(itemHref: string) {
+    return pathname === itemHref || pathname.startsWith(itemHref + "/");
+  }
+
   return (
-    <nav
-      className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background md:hidden"
-      role="navigation"
-      aria-label="Mobile navigation"
-    >
+    <nav className="fixed bottom-0 left-0 right-0 z-[40] border-t bg-background/95 backdrop-blur-md md:hidden safe-bottom" role="navigation" aria-label="Mobile navigation">
       <div className="flex h-14 md:h-16 items-center justify-around">
         {navItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href);
           const Icon = item.icon;
+          const active = isActive(item.href);
 
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center justify-center gap-0.5 rounded-lg px-2 md:px-3 py-1.5 md:py-2 transition-colors",
-                isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                "flex flex-col items-center justify-center gap-0.5 px-2 py-1.5 min-w-[56px] transition-all duration-200 min-h-[44px]",
+                active
+                  ? "text-primary font-semibold"
+                  : "text-muted-foreground hover:text-foreground active:scale-95"
               )}
               aria-label={item.label}
             >
               <div className="relative">
-                <Icon className="h-4 w-4 md:h-5 md:w-5" />
-                {item.badge && (
+                <Icon className={cn("h-5 w-5 transition-transform", active && "scale-110")} />
+                {item.badge && session && (
                   <Badge
                     variant="destructive"
-                    className="absolute -top-1.5 -right-1.5 h-3.5 min-w-3.5 md:h-4 md:min-w-4 px-0.5 md:px-1 text-[8px] md:text-[10px]"
+                    className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 flex items-center justify-center text-[8px] font-bold leading-none border-2 border-background"
                   >
                     0
                   </Badge>
                 )}
               </div>
-              <span className="text-[9px] md:text-[10px]">{item.label}</span>
+              <span className="text-[10px] font-medium">{item.label}</span>
+              {active && (
+                <span className="w-1 h-1 rounded-full bg-primary mt-0.5" />
+              )}
             </Link>
           );
         })}

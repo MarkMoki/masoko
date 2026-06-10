@@ -14,15 +14,31 @@ const inter = Inter({ subsets: ["latin"] });
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
   themeColor: "#14532d",
+  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
   title: "maSoKo — Multi-vendor Marketplace",
   description: "Browse products from multiple sellers across Kenya",
   manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "maSoKo",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "default",
+    "apple-mobile-web-app-title": "maSoKo",
+    "theme-color": "#14532d",
+  },
 };
 
 export default async function RootLayout({
@@ -31,8 +47,8 @@ export default async function RootLayout({
   const userAgent = (await headers()).get("user-agent") ?? "";
 
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" className="safe-top">
+      <body className={`${inter.className} safe-bottom antialiased`}>
         <Providers>
           <Navbar />
           <main className="min-h-[calc(100vh-3.5rem)]">{children}</main>

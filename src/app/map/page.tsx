@@ -1,25 +1,29 @@
 import { MapPageClient } from "@/components/map/map-page-client";
+import { listAllDocuments, Query, COLLECTIONS } from "@/lib/db/helpers";
+
+type StoreLocation = {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  imageUrl: string | null;
+  address: string | null;
+};
 
 export default async function MapPage() {
-  // const stores = await prisma.store.findMany({
-  //   where: {
-  //     latitude: { not: null },
-  //     longitude: { not: null },
-  //   },
-  //   include: { _count: { select: { products: true } } },
-  // });
-  const stores: any[] = []; // Prisma removed
+  const storesRaw = await listAllDocuments(COLLECTIONS.stores, [
+    Query.limit(100),
+  ]);
 
-  const mapped = stores
-    .filter((s) => s.latitude != null && s.longitude != null)
-    .map((s) => ({
+  const stores: StoreLocation[] = storesRaw
+    .filter((s: any) => s.latitude != null && s.longitude != null)
+    .map((s: any) => ({
       id: s.id,
       name: s.name,
-      latitude: s.latitude!,
-      longitude: s.longitude!,
-      imageUrl: s.imageUrl,
-      address: s.address,
-      _count: s._count,
+      latitude: s.latitude as number,
+      longitude: s.longitude as number,
+      imageUrl: s.imageUrl ?? null,
+      address: s.address ?? null,
     }));
 
   return (
@@ -28,7 +32,7 @@ export default async function MapPage() {
       <p className="mb-6 text-muted-foreground">
         Find sellers near you on OpenStreetMap
       </p>
-      <MapPageClient stores={mapped} />
+      <MapPageClient stores={stores} />
     </div>
   );
 }

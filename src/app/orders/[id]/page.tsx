@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/auth";
+import { getMasterOrderFull, enrichSellerOrder } from "@/lib/db/orders";
 import { OrderPaymentForm } from "@/components/orders/order-payment-form";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
+import { Role, SellerOrderStatus } from "@/lib/types";
 
 export default async function OrderDetailPage({
   params,
@@ -13,29 +15,31 @@ export default async function OrderDetailPage({
   const { id } = await params;
   const session = await getSession();
 
-  // const order = await prisma.masterOrder.findUnique({
-  //   where: { id },
-  //   include: {
-  //     sellerOrders: {
-  //       include: {
-  //         items: { include: { product: true } },
-  //         seller: {
-  //           include: {
-  //             paymentMethods: { where: { isDefault: true }, take: 1 },
-  //             store: true,
-  //           },
-  //         },
-  //         payments: { orderBy: { createdAt: "desc" } },
-  //       },
-  //     },
-  //   },
-  // });
-  const order: any = null; // Prisma removed
+  const order = await getMasterOrderFull(id);
 
   if (!order) notFound();
-  if (session?.sub !== order.customerId && session?.role !== "ADMIN") {
-    notFound();
+
+  let isAuthorized = false;
+  if (session?.role === Role.ADMIN) {
+    isAuthorized = true;
+  } else if (session?.role === Role.CUSTOMER) {
+    isAuthorized = order.customerId === session.sub;
+  } else if (session?.role === Role.SELLER) {
+    isAuthorized = order.sellerOrders?.some(
+      (so) => so.sellerId === session.sub
+    ) ?? false;
   }
+
+  if (!isAuthorized) notFound();
+
+  const sellerOrders =
+    session?.role === Role.SELLER
+      ? await Promise.all(
+          (order.sellerOrders ?? [])
+            .filter((so) => so.sellerId === session.sub)
+            .map(async (so) => enrichSellerOrder(so as any, { includeItems: true, includeMaster: false }))
+        )
+      : order.sellerOrders;
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8">
@@ -50,14 +54,14 @@ export default async function OrderDetailPage({
       </p>
 
       <div className="space-y-6">
-        {order.sellerOrders.map((so: any) => {
-          const method = so.seller.paymentMethods[0];
-          const latestPayment = so.payments[0];
+        {(sellerOrders ?? []).map((so) => {
+          const method = so.seller?.paymentMethods?.[0];
+          const latestPayment = so.payments?.[0];
           return (
             <Card key={so.id}>
               <CardHeader>
                 <CardTitle className="text-lg">
-                  {so.seller.store?.name ?? so.seller.name}
+                  {so.seller?.store?.name ?? so.seller?.name}
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
                   Subtotal: {formatCurrency(so.subtotal)} · {so.status.replace(/_/g, " ")}
@@ -65,9 +69,9 @@ export default async function OrderDetailPage({
               </CardHeader>
               <CardContent className="space-y-4">
                 <ul className="text-sm">
-                  {so.items.map((item: any) => (
+                  {(so.items ?? []).map((item) => (
                     <li key={item.id}>
-                      {item.product.name} × {item.quantity} —{" "}
+                      {item.product?.name ?? "Product"} × {item.quantity} —{" "}
                       {formatCurrency(item.unitPrice * item.quantity)}
                     </li>
                   ))}
@@ -92,7 +96,7 @@ export default async function OrderDetailPage({
                 )}
 
                 {session?.sub === order.customerId &&
-                  !["PAID", "PROCESSING", "READY", "DELIVERED"].includes(so.status) && (
+                  ![SellerOrderStatus.PAID, SellerOrderStatus.PROCESSING, SellerOrderStatus.READY, SellerOrderStatus.DELIVERED].includes(so.status) && (
                     <OrderPaymentForm
                       sellerOrderId={so.id}
                       amount={so.subtotal}

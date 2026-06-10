@@ -4,17 +4,24 @@ import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency } from "@/lib/utils";
+import { Role } from "@/lib/types";
+import { listMasterOrders, enrichMasterOrder } from "@/lib/db/orders";
 
 export default async function OrdersPage() {
   const session = await getSession();
   if (!session) redirect("/login");
 
-  // const orders = await prisma.masterOrder.findMany({
-  //   where: { customerId: session.sub },
-  //   orderBy: { createdAt: "desc" },
-  //   include: { sellerOrders: true },
-  // });
-  const orders: any[] = []; // Prisma removed
+  let orders: any[] = [];
+
+  if (session.role === Role.CUSTOMER) {
+    const result = await listMasterOrders({ customerId: session.sub, limit: 50 });
+    orders = await Promise.all(
+      result.documents.map(async (order) => {
+        const enriched = await enrichMasterOrder(order);
+        return enriched;
+      })
+    );
+  }
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8">
@@ -32,7 +39,7 @@ export default async function OrdersPage() {
                       Order #{order.id.slice(-8).toUpperCase()}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {order.sellerOrders.length} seller(s) ·{" "}
+                      {order.sellerOrders?.length ?? 0} seller(s) ·{" "}
                       {new Date(order.createdAt).toLocaleDateString()}
                     </p>
                   </div>
